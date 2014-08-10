@@ -33,6 +33,11 @@
 
 #include "NeoPixelParallel.h"
 
+#define NUM_PINS 7
+// bitmask for pins 0 to (NUM_PINS - 1)
+// (2^NUM_PINS - 1) 
+#define PIN_MASK ((1<<NUM_PINS) - 1)
+
 Adafruit_NeoPixel::Adafruit_NeoPixel(uint16_t n, uint8_t t) : numLEDs(n), numBytes(n * 3), pixels(NULL)
 #if defined(NEO_RGB) || defined(NEO_KHZ400)
   ,type(t)
@@ -53,8 +58,8 @@ Adafruit_NeoPixel::~Adafruit_NeoPixel() {
 }
 
 void Adafruit_NeoPixel::begin(void) {
-  setPinMask(0x7);
-  for (uint8_t pin=0; pin<=2; pin++){
+  setPinMask(PIN_MASK);
+  for (uint8_t pin=0; pin<NUM_PINS; pin++){
     pinMode(pin, OUTPUT);
     digitalWrite(pin, LOW);
   }
@@ -799,16 +804,11 @@ void Adafruit_NeoPixel::setPinMask(uint8_t mask) {
   uint8_t realMask = 0;
   const volatile uint8_t* prevPort = 0;
   
-  setPin(0);
-  realMask |= pinMask;
-  prevPort = port;
-  setPin(1);
-  realMask |= pinMask;
-  prevPort = port;
-  setPin(2);
-  realMask |= pinMask;
-  prevPort = port;
-  
+  for(int i = 0; i < NUM_PINS; i++) { 
+    setPin(i);
+    realMask |= pinMask;
+    prevPort = port;
+  }  
   pinMask = realMask;
 }
 
@@ -903,6 +903,16 @@ uint32_t Adafruit_NeoPixel::getPixelColor(uint16_t n) const {
   }
 
   return 0; // Pixel # is out of bounds
+}
+
+void Adafruit_NeoPixel::addPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b) {
+  if (n >= numLEDs) {
+    return;
+  }
+  uint32_t color = getPixelColor(n);
+  setPixelColor(n, (r + (color & 0xff) < 256) ? ((r + color & 0xff)) : 255,
+    ((g + ((color >> 8) & 0xff)) < 256) ? (g + ((color >> 8) & 0xff)) : 255,
+    ((b + (color >> 16)) < 256) ? (b + (color >> 16)) : 255);
 }
 
 uint8_t *Adafruit_NeoPixel::getPixels(void) const {
