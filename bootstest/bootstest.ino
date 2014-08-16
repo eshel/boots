@@ -1,19 +1,15 @@
 #include "NeoPixelParallel.h"
 #include "Particle.h"
 #include "ColorUtils.h"
-#define FULL_MASK  0x07
 
-uint8_t mask = 0x07;
-
+#define STRIPS_NUM  7
 #define STRIP_LENGTH 16
-// Parameter 1 = number of pixels in strip
-// Parameter 2 = Arduino pin number (most are valid)
-// Parameter 3 = pixel type flags, add together as needed:
+
 //   NEO_KHZ800  800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
 //   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
 //   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
 //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(STRIP_LENGTH, NEO_GRB + NEO_KHZ800);
+MultiNeoPixel strip = MultiNeoPixel(7, STRIP_LENGTH, NEO_GRB + NEO_KHZ800);
 
 ParticleSystem particles(strip);
 
@@ -29,7 +25,7 @@ unsigned long current_time = 0;
 void setup() {
   //Serial.begin(9600);
   strip.begin();
-  strip.show(mask); // Initialize all pixels to 'off'
+  strip.show(); // Initialize all pixels to 'off'
   last_update = millis();
 }
 
@@ -68,7 +64,7 @@ void do_particles() {
   
   particles.runFrame(current_time);
 
-  strip.show(0x7f);
+  strip.show();
 }
 
 void rainbow(uint8_t wait) {
@@ -78,7 +74,7 @@ void rainbow(uint8_t wait) {
     for(i=0; i<strip.numPixels(); i++) {
       strip.setPixelColor(i, Wheel((i+j) % 768));
     }
-    strip.show(mask);
+    strip.show();
     delay(wait);
   }
 }
@@ -91,7 +87,7 @@ void rainbowCycle(uint8_t wait) {
     for(i=0; i< strip.numPixels(); i++) {
       strip.setPixelColor(i, Wheel(((i * 256 / strip.numPixels()) + j) % 768));
     }
-    strip.show(mask);
+    strip.show();
     delay(wait);
   }
 }

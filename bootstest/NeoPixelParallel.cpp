@@ -38,9 +38,12 @@
 // (2^NUM_PINS - 1) 
 #define PIN_MASK ((1<<NUM_PINS) - 1)
 
-Adafruit_NeoPixel::Adafruit_NeoPixel(uint16_t n, uint8_t t) : numLEDs(n), numBytes(n * 3), pixels(NULL)
+MultiNeoPixel::MultiNeoPixel(uint8_t stripsNum, uint16_t pixelsInStrip, uint8_t ledType) : 
+  numLEDs(pixelsInStrip), 
+  numBytes(pixelsInStrip * 3), 
+  pixels(NULL)
 #if defined(NEO_RGB) || defined(NEO_KHZ400)
-  ,type(t)
+  ,type(ledType)
 #endif
 #ifdef __AVR__
 //  ,port(portOutputRegister(digitalPinToPort(p))),
@@ -52,12 +55,12 @@ Adafruit_NeoPixel::Adafruit_NeoPixel(uint16_t n, uint8_t t) : numLEDs(n), numByt
   }
 }
 
-Adafruit_NeoPixel::~Adafruit_NeoPixel() {
+MultiNeoPixel::~MultiNeoPixel() {
   if(pixels) free(pixels);
   //pinMode(pin, INPUT);
 }
 
-void Adafruit_NeoPixel::begin(void) {
+void MultiNeoPixel::begin(void) {
   setPinMask(PIN_MASK);
   for (uint8_t pin=0; pin<NUM_PINS; pin++){
     pinMode(pin, OUTPUT);
@@ -65,7 +68,7 @@ void Adafruit_NeoPixel::begin(void) {
   }
 }
 
-void Adafruit_NeoPixel::show(uint8_t mask) {
+void MultiNeoPixel::show() {
 
   if(!pixels) return;
 
@@ -800,7 +803,7 @@ void Adafruit_NeoPixel::show(uint8_t mask) {
   endTime = micros(); // Save EOD time for latch on next call
 }
 
-void Adafruit_NeoPixel::setPinMask(uint8_t mask) {
+void MultiNeoPixel::setPinMask(uint8_t mask) {
   uint8_t realMask = 0;
   const volatile uint8_t* prevPort = 0;
   
@@ -813,7 +816,7 @@ void Adafruit_NeoPixel::setPinMask(uint8_t mask) {
 }
 
 // Set the output pin number
-void Adafruit_NeoPixel::setPin(uint8_t p) {
+void MultiNeoPixel::setPin(uint8_t p) {
   //pinMode(pin, INPUT);
   //pin = p;
   pinMode(p, OUTPUT);
@@ -825,7 +828,7 @@ void Adafruit_NeoPixel::setPin(uint8_t p) {
 }
 
 // Set pixel color from separate R,G,B components:
-void Adafruit_NeoPixel::setPixelColor(
+void MultiNeoPixel::setPixelColor(
  uint16_t n, uint8_t r, uint8_t g, uint8_t b) {
   if(n < numLEDs) {
     if(brightness) { // See notes in setBrightness()
@@ -850,7 +853,7 @@ void Adafruit_NeoPixel::setPixelColor(
 }
 
 // Set pixel color from 'packed' 32-bit RGB color:
-void Adafruit_NeoPixel::setPixelColor(uint16_t n, uint32_t c) {
+void MultiNeoPixel::setPixelColor(uint16_t n, uint32_t c) {
   if(n < numLEDs) {
     uint8_t
       r = (uint8_t)(c >> 16),
@@ -879,12 +882,12 @@ void Adafruit_NeoPixel::setPixelColor(uint16_t n, uint32_t c) {
 
 // Convert separate R,G,B into packed 32-bit RGB color.
 // Packed format is always RGB, regardless of LED strand color order.
-uint32_t Adafruit_NeoPixel::Color(uint8_t r, uint8_t g, uint8_t b) {
+uint32_t MultiNeoPixel::Color(uint8_t r, uint8_t g, uint8_t b) {
   return ((uint32_t)r << 16) | ((uint32_t)g <<  8) | b;
 }
 
 // Query color from previously-set pixel (returns packed 32-bit RGB value)
-uint32_t Adafruit_NeoPixel::getPixelColor(uint16_t n) const {
+uint32_t MultiNeoPixel::getPixelColor(uint16_t n) const {
 
   if(n < numLEDs) {
     uint16_t ofs = n * 3;
@@ -905,7 +908,7 @@ uint32_t Adafruit_NeoPixel::getPixelColor(uint16_t n) const {
   return 0; // Pixel # is out of bounds
 }
 
-void Adafruit_NeoPixel::addPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b) {
+void MultiNeoPixel::addPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b) {
   if (n >= numLEDs) {
     return;
   }
@@ -915,11 +918,11 @@ void Adafruit_NeoPixel::addPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t 
     ((b + (color >> 16)) < 256) ? (b + (color >> 16)) : 255);
 }
 
-uint8_t *Adafruit_NeoPixel::getPixels(void) const {
+uint8_t *MultiNeoPixel::getPixels(void) const {
   return pixels;
 }
 
-uint16_t Adafruit_NeoPixel::numPixels(void) const {
+uint16_t MultiNeoPixel::numPixels(void) const {
   return numLEDs;
 }
 
@@ -935,7 +938,7 @@ uint16_t Adafruit_NeoPixel::numPixels(void) const {
 // the limited number of steps (quantization) in the old data will be
 // quite visible in the re-scaled version.  For a non-destructive
 // change, you'll need to re-render the full strip data.  C'est la vie.
-void Adafruit_NeoPixel::setBrightness(uint8_t b) {
+void MultiNeoPixel::setBrightness(uint8_t b) {
   // Stored brightness value is different than what's passed.
   // This simplifies the actual scaling math later, allowing a fast
   // 8x8-bit multiply and taking the MSB.  'brightness' is a uint8_t,

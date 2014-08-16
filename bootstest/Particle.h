@@ -10,7 +10,7 @@
 
 class ParticleSystem {
 public:
-  ParticleSystem(Adafruit_NeoPixel& ledStrip) :
+  ParticleSystem(MultiNeoPixel& ledStrip) :
     strip(ledStrip), last_spawn_time(millis()), next_spawn_index(0)
   {
     last_update_time = last_spawn_time;
@@ -78,7 +78,7 @@ protected:
 protected:
 
   // reference to pixel strip for drawing
-  Adafruit_NeoPixel& strip;
+  MultiNeoPixel& strip;
   
   // particle spawning state
   unsigned long last_spawn_time;
