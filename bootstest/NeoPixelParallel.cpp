@@ -33,6 +33,26 @@
 
 #include "NeoPixelParallel.h"
 
+
+static const uint8_t s_PinMasks[7] = {
+  (1 << 0), 
+  (1 << 1),
+  (1 << 2),
+  (1 << 3),
+  (1 << 4),
+  (1 << 5),
+  (1 << 6)
+};
+
+static const uint8_t s_PinMaskAll = 
+  s_PinMasks[0] |
+  s_PinMasks[1] |
+  s_PinMasks[2] |
+  s_PinMasks[3] |
+  s_PinMasks[4] |
+  s_PinMasks[5] |
+  s_PinMasks[6];
+
 MultiNeoPixel::MultiNeoPixel(uint8_t sizeX, uint16_t sizeY, uint8_t ledType) : 
   mAddressMode(ADDRESS_ALL),
   mPixelsPerStrip(sizeY), 
@@ -69,6 +89,34 @@ void MultiNeoPixel::clearAll(void) {
   memset(mPixels, 0, mNumBytes);
 }
 
+void MultiNeoPixel::divideAll(uint8_t d) {
+  for (uint8_t* p = mPixels; p < mPixels + mNumBytes; p++) {
+    uint8_t val = *p;
+    val /= d;
+    *p = val;
+  }
+}
+
+void MultiNeoPixel::addAll(int8_t d) {
+  for (uint8_t* p = mPixels; p < mPixels + mNumBytes; p++) {
+    uint8_t val = *p;
+    if (d < 0) {
+      if (val < -d) {
+        val = 0;
+      } else {
+        val += d;
+      }
+    } else {
+      if ((255 - d) < val) {
+        val = 255;
+      } else {
+        val += d;
+      }
+    }
+    *p = val;
+  }
+}
+
 void MultiNeoPixel::show(void) {
   switch (mAddressMode) {
   case ADDRESS_ANY:
@@ -94,15 +142,13 @@ void MultiNeoPixel::setModeAny() {
 
 
 void MultiNeoPixel::showAll() {
-  setPinMask((1 << mNumStrips) - 1);
+  setPinMask(s_PinMaskAll);
   performShow(mPixels);
 }
 
 void MultiNeoPixel::showOne(uint8_t stripIndex) {
-  setPinMask(1 << stripIndex);
-//  setPinMask(0x01);
+  setPinMask(s_PinMasks[stripIndex]);
   uint8_t* stripBuffer = &mPixels[3 * mPixelsPerStrip * stripIndex];
-  //uint8_t* stripBuffer = mPixels;
   performShow(stripBuffer);
 }
 
@@ -845,10 +891,13 @@ void MultiNeoPixel::setPinMask(uint8_t mask) {
   const volatile uint8_t* prevPort = 0;
   
   // Find out the physical pins, empirically (using the old driver's setPin())
+  mPinMask = 0;
   for(int i = 0; i < 8; i++) { 
     if (mask & 1) {
-      setPin(i);
-      realMask |= mPinMask;
+      pinMode(i, OUTPUT);
+      digitalWrite(i, LOW);
+      realMask |= digitalPinToBitMask(i);
+      mPort = portOutputRegister(digitalPinToPort(i));
       prevPort = mPort;
     }
     mask >>= 1;
@@ -856,6 +905,7 @@ void MultiNeoPixel::setPinMask(uint8_t mask) {
   mPinMask = realMask;
   
   // Set all these pins to digital out mode
+  /*
   uint8_t pinMask = mPinMask;
   for (uint8_t pin=0; pin<8; pin++){
     //if (pinMask & 1) {
@@ -864,6 +914,7 @@ void MultiNeoPixel::setPinMask(uint8_t mask) {
     //}
     //pinMask >>= 1;
   }
+  */
 }
 
 // Set the output pin number

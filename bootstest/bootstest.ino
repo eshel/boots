@@ -2,14 +2,11 @@
 #include "Particle.h"
 #include "ColorUtils.h"
 
-#define STRIPS_NUM  7
-#define STRIP_LENGTH 16
-
 //   NEO_KHZ800  800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
 //   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
 //   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
 //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
-MultiNeoPixel strip = MultiNeoPixel(7, STRIP_LENGTH, NEO_GRB + NEO_KHZ800);
+MultiNeoPixel strip = MultiNeoPixel(7, 16, NEO_GRB + NEO_KHZ800);
 
 ParticleSystem particles(strip);
 
@@ -27,7 +24,6 @@ void setup() {
   randomSeed(analogRead(8));
 
   strip.begin();
-  //strip.setModeAll();
   strip.show(); // Initialize all pixels to 'off'
   
   last_update = millis();
@@ -36,14 +32,15 @@ void setup() {
 static uint32_t sFrameNo = 0;
 
 void loop() {
+  strip.setModeAny();
   current_time = millis();
   //do_particles();
-  //test_pattern();
-  random_blips(1);
+  test_pattern();
+  //random_blips(1);
   last_update = current_time;
   
   sFrameNo++;
-  delay(10); // important to have this!
+  delay(15); // important to have this!
 }
 
 static uint8_t x = 0;
@@ -67,11 +64,12 @@ void add_random_blip() {
 
 void random_blips(uint8_t cleanInBetween) {
   if (cleanInBetween) {
-    strip.clearAll();
+    strip.addAll(-15);
   }
   
-  delay(random(100, 500));
-  uint8_t pixelCount = random(0, 28);
+  //delay(random(10, 50));
+  delay(23);
+  uint8_t pixelCount = 1;//random(0, strip.getNumAddresses());
   for (uint8_t i=0; i<pixelCount; i++) {
     add_random_blip();
   }
@@ -80,7 +78,6 @@ void random_blips(uint8_t cleanInBetween) {
 }
 
 void test_pattern() {
-  strip.setModeAny();
   draw_test_pattern(1);
 }
 
@@ -92,7 +89,7 @@ void draw_test_pattern(uint8_t cleanInBetween) {
     strip.clearAll();
   }
     
-  uint32_t c = Wheel(fullIterNum * 30);
+  uint32_t c = Wheel(sFrameNo % 768);
   strip.setPixelColor(pixelIndex, c);
   strip.show();
 

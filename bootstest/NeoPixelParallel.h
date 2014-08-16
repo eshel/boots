@@ -90,6 +90,8 @@ public:
   }
   
   void clearAll();  
+  void divideAll(uint8_t d);
+  void addAll(int8_t d);
   
   void setModeAll();
   void setModeAny();

@@ -3,7 +3,7 @@
 * Idle Animations
 	* Slow Pulsating colors
 	* "Cylon Scan"
-	* Random Noise
+	* Random Disco
 	* Matrix Drops
 	* Scrolling Patterns (fire, water, earth, lightning)
 * Step/Event Responses
