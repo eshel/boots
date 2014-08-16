@@ -40,10 +40,20 @@
 #endif
 
 typedef enum {
-  STRIPS_MODE_INDIVIDUAL = 0,
-  STRIPS_MODE_ALL,
-  _STRIPS_MODE_NUM
+  MODE_INDIVIDUAL = 0,
+  MODE_ALL,
+  _MODE_NUM
 } StripsMode;
+
+#define GET_R(rgb)
+#define GET_G(rgb)
+#define GET_B(rgb)
+
+#define SET_R(rgb, r)
+#define SET_G(rgb, g)
+#define SET_B(rgb, b)
+
+#define SET_RGB(rgb, r, g, b)
 
 class MultiNeoPixel {
 
@@ -55,30 +65,36 @@ class MultiNeoPixel {
 
   void begin(void);
   void show(void);
+  
+  uint8_t getSizeX();
+  uint8_t getSizeY();
+  
+  void setModeAll();
+  void setModeIndividual();
     
   void setPinMask(uint8_t mask);
   void setPin(uint8_t p);
+  
   void setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b);
   void setPixelColor(uint16_t n, uint32_t c);
   void addPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b);
-  void setBrightness(uint8_t);
+  
   uint8_t* getPixels() const;
   uint16_t numPixels(void) const;
   static uint32_t Color(uint8_t r, uint8_t g, uint8_t b);
   uint32_t getPixelColor(uint16_t n) const;
 
  private:
-  const uint16_t numLEDs;       // Number of RGB LEDs in strip
-  const uint16_t numBytes;      // Size of 'pixels' buffer below
+  const uint16_t mPixelsPerStrip;       // Number of RGB LEDs in strip
+  const uint16_t mBytesPerStrip;      // Size of 'pixels' buffer below
 #if defined(NEO_RGB) || defined(NEO_KHZ400)
   const uint8_t type;          // Pixel flags (400 vs 800 KHz, RGB vs GRB color)
 #endif
-  uint8_t brightness;
   uint8_t* pixels;        // Holds LED color values (3 bytes each)
   uint32_t endTime;       // Latch timing reference
 #ifdef __AVR__
   const volatile uint8_t* port;         // Output PORT register
-  uint8_t pinMask;       // Output PORT bitmask
+  uint8_t mPinMask;       // Output PORT bitmask
 #endif
 
 };

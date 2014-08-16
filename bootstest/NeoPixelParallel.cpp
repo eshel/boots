@@ -33,25 +33,27 @@
 
 #include "NeoPixelParallel.h"
 
-#define NUM_PINS 7
+//#define NUM_PINS 7
 // bitmask for pins 0 to (NUM_PINS - 1)
 // (2^NUM_PINS - 1) 
-#define PIN_MASK ((1<<NUM_PINS) - 1)
+//#define PIN_MASK ((1<<NUM_PINS) - 1)
+
+#define PIN_MASK  0x7E
 
 MultiNeoPixel::MultiNeoPixel(uint8_t stripsNum, uint16_t pixelsInStrip, uint8_t ledType) : 
-  numLEDs(pixelsInStrip), 
-  numBytes(pixelsInStrip * 3), 
+  mPixelsPerStrip(pixelsInStrip), 
+  mBytesPerStrip(pixelsInStrip * 3), 
   pixels(NULL)
 #if defined(NEO_RGB) || defined(NEO_KHZ400)
   ,type(ledType)
 #endif
 #ifdef __AVR__
 //  ,port(portOutputRegister(digitalPinToPort(p))),
-//   pinMask(digitalPinToBitMask(p))
+//   mPinMask(digitalPinToBitMask(p))
 #endif
 {
-  if((pixels = (uint8_t *)malloc(numBytes))) {
-    memset(pixels, 0, numBytes);
+  if((pixels = (uint8_t *)malloc(mBytesPerStrip))) {
+    memset(pixels, 0, mBytesPerStrip);
   }
 }
 
@@ -62,9 +64,13 @@ MultiNeoPixel::~MultiNeoPixel() {
 
 void MultiNeoPixel::begin(void) {
   setPinMask(PIN_MASK);
-  for (uint8_t pin=0; pin<NUM_PINS; pin++){
-    pinMode(pin, OUTPUT);
-    digitalWrite(pin, LOW);
+  uint8_t pinMask = mPinMask;
+  for (uint8_t pin=0; pin<8; pin++){
+    if (pinMask & 1) {
+      pinMode(pin, OUTPUT);
+      digitalWrite(pin, LOW);
+    }
+    pinMask >>= 1;
   }
 }
 
@@ -98,7 +104,7 @@ void MultiNeoPixel::show() {
 #ifdef __AVR__
 
   volatile uint16_t
-    i   = numBytes; // Loop counter
+    i   = mBytesPerStrip; // Loop counter
   volatile uint8_t
    *ptr = pixels,   // Pointer to next byte
     b   = *ptr++,   // Current byte value
@@ -146,8 +152,8 @@ void MultiNeoPixel::show() {
 
     if(port == &PORTD) {
 
-      hi = PORTD |  pinMask;
-      lo = PORTD & ~pinMask;
+      hi = PORTD |  mPinMask;
+      lo = PORTD & ~mPinMask;
       n1 = lo;
       if(b & 0x80) n1 = hi;
 
@@ -245,8 +251,8 @@ void MultiNeoPixel::show() {
 #endif // PORTD
 
       // Same as above, just switched to PORTB and stripped of comments.
-      hi = PORTB |  pinMask;
-      lo = PORTB & ~pinMask;
+      hi = PORTB |  mPinMask;
+      lo = PORTB & ~mPinMask;
       n1 = lo;
       if(b & 0x80) n1 = hi;
 
@@ -339,8 +345,8 @@ void MultiNeoPixel::show() {
 
     volatile uint8_t next, bit;
 
-    hi   = *port |  pinMask;
-    lo   = *port & ~pinMask;
+    hi   = *port |  mPinMask;
+    lo   = *port & ~mPinMask;
     next = lo;
     bit  = 8;
 
@@ -397,8 +403,8 @@ void MultiNeoPixel::show() {
 
     if(port == &PORTD) {
 
-      hi   = PORTD |  pinMask;
-      lo   = PORTD & ~pinMask;
+      hi   = PORTD |  mPinMask;
+      lo   = PORTD & ~mPinMask;
       next = lo;
       if(b & 0x80) next = hi;
 
@@ -455,8 +461,8 @@ void MultiNeoPixel::show() {
 
 #endif // PORTD
 
-      hi   = PORTB |  pinMask;
-      lo   = PORTB & ~pinMask;
+      hi   = PORTB |  mPinMask;
+      lo   = PORTB & ~mPinMask;
       next = lo;
       if(b & 0x80) next = hi;
 
@@ -515,8 +521,8 @@ void MultiNeoPixel::show() {
 
     volatile uint8_t next, bit;
 
-    hi   = *port |  pinMask;
-    lo   = *port & ~pinMask;
+    hi   = *port |  mPinMask;
+    lo   = *port & ~mPinMask;
     next = lo;
     bit  = 8;
 
@@ -572,8 +578,8 @@ void MultiNeoPixel::show() {
 
     volatile uint8_t next, bit;
 
-    hi   = *port |  pinMask;
-    lo   = *port & ~pinMask;
+    hi   = *port |  mPinMask;
+    lo   = *port & ~mPinMask;
     next = lo;
     bit  = 8;
 
@@ -619,8 +625,8 @@ void MultiNeoPixel::show() {
 
     volatile uint8_t next, bit;
 
-    hi   = *port |  pinMask;
-    lo   = *port & ~pinMask;
+    hi   = *port |  mPinMask;
+    lo   = *port & ~mPinMask;
     next = lo;
     bit  = 8;
 
@@ -684,7 +690,7 @@ void MultiNeoPixel::show() {
 #define CYCLES_400      (F_CPU /  400000)
 
   uint8_t          *p   = pixels,
-                   *end = p + numBytes, pix, mask;
+                   *end = p + mBytesPerStrip, pix, mask;
   volatile uint8_t *set = portSetRegister(pin),
                    *clr = portClearRegister(pin);
   uint32_t          cyc;
@@ -743,7 +749,7 @@ void MultiNeoPixel::show() {
   #define TIME_400_1 ((int)(1.20 * SCALE + 0.5) - (5 * INST))
   #define PERIOD_400 ((int)(2.50 * SCALE + 0.5) - (5 * INST))
 
-  int             pinMask, time0, time1, period, t;
+  int             mPinMask, time0, time1, period, t;
   Pio            *port;
   volatile WoReg *portSet, *portClear, *timeValue, *timeReset;
   uint8_t        *p, *end, pix, mask;
@@ -754,14 +760,14 @@ void MultiNeoPixel::show() {
     TC_CMR_WAVE | TC_CMR_WAVSEL_UP | TC_CMR_TCCLKS_TIMER_CLOCK1);
   TC_Start(TC1, 0);
 
-  pinMask   = g_APinDescription[pin].ulPin; // Don't 'optimize' these into
+  mPinMask   = g_APinDescription[pin].ulPin; // Don't 'optimize' these into
   port      = g_APinDescription[pin].pPort; // declarations above.  Want to
   portSet   = &(port->PIO_SODR);            // burn a few cycles after
   portClear = &(port->PIO_CODR);            // starting timer to minimize
   timeValue = &(TC1->TC_CHANNEL[0].TC_CV);  // the initial 'while'.
   timeReset = &(TC1->TC_CHANNEL[0].TC_CCR);
   p         =  pixels;
-  end       =  p + numBytes;
+  end       =  p + mBytesPerStrip;
   pix       = *p++;
   mask      = 0x80;
 
@@ -782,10 +788,10 @@ void MultiNeoPixel::show() {
   for(t = time0;; t = time0) {
     if(pix & mask) t = time1;
     while(*timeValue < period);
-    *portSet   = pinMask;
+    *portSet   = mPinMask;
     *timeReset = TC_CCR_CLKEN | TC_CCR_SWTRG;
     while(*timeValue < t);
-    *portClear = pinMask;
+    *portClear = mPinMask;
     if(!(mask >>= 1)) {   // This 'inside-out' loop logic utilizes
       if(p >= end) break; // idle time to minimize inter-byte delays.
       pix = *p++;
@@ -796,7 +802,7 @@ void MultiNeoPixel::show() {
   TC_Stop(TC1, 0);
 
 #endif // end Arduino Due
-
+  
 #endif // end Architecture select
 
   interrupts();
@@ -807,12 +813,15 @@ void MultiNeoPixel::setPinMask(uint8_t mask) {
   uint8_t realMask = 0;
   const volatile uint8_t* prevPort = 0;
   
-  for(int i = 0; i < NUM_PINS; i++) { 
-    setPin(i);
-    realMask |= pinMask;
-    prevPort = port;
+  for(int i = 0; i < 8; i++) { 
+    if (mask & 1) {
+      setPin(i);
+      realMask |= mPinMask;
+      prevPort = port;
+    }
+    mask >>= 1;
   }  
-  pinMask = realMask;
+  mPinMask = realMask;
 }
 
 // Set the output pin number
@@ -823,19 +832,14 @@ void MultiNeoPixel::setPin(uint8_t p) {
   digitalWrite(p, LOW);
 #ifdef __AVR__
   port    = portOutputRegister(digitalPinToPort(p));
-  pinMask = digitalPinToBitMask(p);
+  mPinMask = digitalPinToBitMask(p);
 #endif
 }
 
 // Set pixel color from separate R,G,B components:
 void MultiNeoPixel::setPixelColor(
  uint16_t n, uint8_t r, uint8_t g, uint8_t b) {
-  if(n < numLEDs) {
-    if(brightness) { // See notes in setBrightness()
-      r = (r * brightness) >> 8;
-      g = (g * brightness) >> 8;
-      b = (b * brightness) >> 8;
-    }
+  if(n < mPixelsPerStrip) {
     uint8_t *p = &pixels[n * 3];
 #ifdef NEO_RGB
     if((type & NEO_COLMASK) == NEO_GRB) {
@@ -854,16 +858,11 @@ void MultiNeoPixel::setPixelColor(
 
 // Set pixel color from 'packed' 32-bit RGB color:
 void MultiNeoPixel::setPixelColor(uint16_t n, uint32_t c) {
-  if(n < numLEDs) {
+  if(n < mPixelsPerStrip) {
     uint8_t
       r = (uint8_t)(c >> 16),
       g = (uint8_t)(c >>  8),
       b = (uint8_t)c;
-    if(brightness) { // See notes in setBrightness()
-      r = (r * brightness) >> 8;
-      g = (g * brightness) >> 8;
-      b = (b * brightness) >> 8;
-    }
     uint8_t *p = &pixels[n * 3];
 #ifdef NEO_RGB
     if((type & NEO_COLMASK) == NEO_GRB) {
@@ -889,7 +888,7 @@ uint32_t MultiNeoPixel::Color(uint8_t r, uint8_t g, uint8_t b) {
 // Query color from previously-set pixel (returns packed 32-bit RGB value)
 uint32_t MultiNeoPixel::getPixelColor(uint16_t n) const {
 
-  if(n < numLEDs) {
+  if(n < mPixelsPerStrip) {
     uint16_t ofs = n * 3;
     return (uint32_t)(pixels[ofs + 2]) |
 #ifdef NEO_RGB
@@ -909,7 +908,7 @@ uint32_t MultiNeoPixel::getPixelColor(uint16_t n) const {
 }
 
 void MultiNeoPixel::addPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b) {
-  if (n >= numLEDs) {
+  if (n >= mPixelsPerStrip) {
     return;
   }
   uint32_t color = getPixelColor(n);
@@ -923,42 +922,6 @@ uint8_t *MultiNeoPixel::getPixels(void) const {
 }
 
 uint16_t MultiNeoPixel::numPixels(void) const {
-  return numLEDs;
+  return mPixelsPerStrip;
 }
 
-// Adjust output brightness; 0=darkest (off), 255=brightest.  This does
-// NOT immediately affect what's currently displayed on the LEDs.  The
-// next call to show() will refresh the LEDs at this level.  However,
-// this process is potentially "lossy," especially when increasing
-// brightness.  The tight timing in the WS2811/WS2812 code means there
-// aren't enough free cycles to perform this scaling on the fly as data
-// is issued.  So we make a pass through the existing color data in RAM
-// and scale it (subsequent graphics commands also work at this
-// brightness level).  If there's a significant step up in brightness,
-// the limited number of steps (quantization) in the old data will be
-// quite visible in the re-scaled version.  For a non-destructive
-// change, you'll need to re-render the full strip data.  C'est la vie.
-void MultiNeoPixel::setBrightness(uint8_t b) {
-  // Stored brightness value is different than what's passed.
-  // This simplifies the actual scaling math later, allowing a fast
-  // 8x8-bit multiply and taking the MSB.  'brightness' is a uint8_t,
-  // adding 1 here may (intentionally) roll over...so 0 = max brightness
-  // (color values are interpreted literally; no scaling), 1 = min
-  // brightness (off), 255 = just below max brightness.
-  uint8_t newBrightness = b + 1;
-  if(newBrightness != brightness) { // Compare against prior value
-    // Brightness has changed -- re-scale existing data in RAM
-    uint8_t  c,
-            *ptr           = pixels,
-             oldBrightness = brightness - 1; // De-wrap old brightness value
-    uint16_t scale;
-    if(oldBrightness == 0) scale = 0; // Avoid /0
-    else if(b == 255) scale = 65535 / oldBrightness;
-    else scale = (((uint16_t)newBrightness << 8) - 1) / oldBrightness;
-    for(uint16_t i=0; i<numBytes; i++) {
-      c      = *ptr;
-      *ptr++ = (c * scale) >> 8;
-    }
-    brightness = newBrightness;
-  }
-}
