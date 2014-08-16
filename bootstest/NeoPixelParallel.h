@@ -59,15 +59,18 @@ public:
   void showAll(void);
   void showOne(uint8_t stripIndex);
   
-  inline uint8_t getSizeX() {
+  // This does the actual drawing, once everything has been configured
+  void performShow(uint8_t* stripBuffer);
+  
+  inline uint8_t getSizeX() const {
     return mNumStrips;
   }
   
-  inline uint8_t getSizeY() {
+  inline uint8_t getSizeY() const {
     return mPixelsPerStrip;
   }
   
-  inline uint16_t getSizePixels() {
+  inline uint16_t getSizePixels() const {
     return mNumPixels;
   }
   
@@ -80,6 +83,10 @@ public:
     default:
       setModeAll();
     }  
+  }
+  
+  EAddressMode getAddressMode() {
+    return mAddressMode;
   }
   
   void clearAll();  
@@ -104,8 +111,16 @@ public:
     return mNumStrips;
   }
   
+  inline uint16_t getNumAddresses(void) const {
+    if (mAddressMode == ADDRESS_ANY) {
+      return getSizePixels();
+    } else {
+      return getSizeY();
+    }
+  }
+  
   inline uint16_t index(uint8_t x, uint8_t y) const {
-    return (x * mNumStrips) + y;
+    return ((uint16_t)x * (uint16_t)mNumStrips) + (uint16_t)y;
   }
   
 // Convert separate R,G,B into packed 32-bit RGB color.
@@ -132,6 +147,10 @@ public:
   
   inline void setPixelColor(uint8_t x, uint8_t y, uint8_t r, uint8_t g, uint8_t b) {
     setPixelColor(index(x, y), r, g, b);
+  }
+  
+  inline void setPixelColor(uint8_t x, uint8_t y, uint32_t c) {
+    setPixelColor(index(x, y), c);
   }
   
   inline void setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b) {
@@ -172,6 +191,7 @@ public:
   }  
   
 private:
+  EAddressMode mAddressMode;
   const uint16_t mPixelsPerStrip;       // Number of RGB LEDs in strip
   const uint16_t mBytesPerStrip;      // Size of 'pixels' buffer below
   const uint16_t mNumPixels;
@@ -182,7 +202,6 @@ private:
   uint8_t* mPixels;        // Holds LED color values (3 bytes each)
   uint8_t mNumStrips;      // Number of parallel LED strips we have connected
   uint32_t mEndTime;       // Latch timing reference
-  uint8_t mRequiresBegin;
 #ifdef __AVR__
   const volatile uint8_t* mPort;         // Output PORT register
   uint8_t mPinMask;       // Output PORT bitmask

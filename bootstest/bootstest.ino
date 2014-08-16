@@ -24,37 +24,83 @@ unsigned long current_time = 0;
 
 void setup() {
   //Serial.begin(9600);
-  //strip.begin();
+  randomSeed(analogRead(8));
+
+  strip.begin();
+  //strip.setModeAll();
   strip.show(); // Initialize all pixels to 'off'
+  
   last_update = millis();
 }
 
+static uint32_t sFrameNo = 0;
 
 void loop() {
-  /*
-  // Some example procedures showing how to display to the pixels:
-  colorWipe(strip.Color(255, 0, 0), 50); // Red
-  colorWipe(strip.Color(0, 255, 0), 50); // Green
-  colorWipe(strip.Color(0, 0, 255), 50); // Blue
-  // Send a theater pixel chase in...
-  theaterChase(strip.Color(127, 127, 127), 50); // White
-  theaterChase(strip.Color(127,   0,   0), 50); // Red
-  theaterChase(strip.Color(  0,   0, 127), 50); // Blue
-*/
-  //rainbow(10);
-  //rainbowCycle(10);
-  
-  //theaterChaseRainbow(50);
   current_time = millis();
-  do_particles();
-  test_pattern();
+  //do_particles();
+  //test_pattern();
+  random_blips(1);
   last_update = current_time;
-  delay(10); // important to have this!
   
+  sFrameNo++;
+  delay(10); // important to have this!
+}
+
+static uint8_t x = 0;
+static uint8_t y = 0;
+static int wheelPos = 0;
+
+static uint16_t pixelIndex = 0;
+static uint8_t fullIterNum = 0;
+
+#define INC_MOD(x, lim) (x)++; if ((x) >= (lim)) x=0;
+
+
+void add_random_blip() {
+  uint16_t maxPixel = strip.getNumAddresses();
+  uint16_t colorOffset = random(0, (256*3));
+  uint32_t color = Wheel(colorOffset);
+  uint16_t pixelIndex = random(0, maxPixel);
+  
+  strip.setPixelColor(pixelIndex, color);
+}  
+
+void random_blips(uint8_t cleanInBetween) {
+  if (cleanInBetween) {
+    strip.clearAll();
+  }
+  
+  delay(random(100, 500));
+  uint8_t pixelCount = random(0, 28);
+  for (uint8_t i=0; i<pixelCount; i++) {
+    add_random_blip();
+  }
+  
+  strip.show();
 }
 
 void test_pattern() {
+  strip.setModeAny();
+  draw_test_pattern(1);
+}
 
+
+void draw_test_pattern(uint8_t cleanInBetween) {
+  uint16_t maxPixel = strip.getNumAddresses();
+  
+  if (cleanInBetween) {
+    strip.clearAll();
+  }
+    
+  uint32_t c = Wheel(fullIterNum * 30);
+  strip.setPixelColor(pixelIndex, c);
+  strip.show();
+
+  pixelIndex++;
+  if (pixelIndex >= maxPixel) {
+    pixelIndex = 0;
+    fullIterNum++;
+  }
 }
 
 

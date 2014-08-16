@@ -34,7 +34,7 @@
 #include "NeoPixelParallel.h"
 
 MultiNeoPixel::MultiNeoPixel(uint8_t sizeX, uint16_t sizeY, uint8_t ledType) : 
-  mRequiresBegin(1),
+  mAddressMode(ADDRESS_ALL),
   mPixelsPerStrip(sizeY), 
   mBytesPerStrip(sizeY * 3), 
   mNumStrips(sizeX),
@@ -62,7 +62,7 @@ MultiNeoPixel::~MultiNeoPixel() {
 }
 
 void MultiNeoPixel::begin(void) {
-  setPinMask((1 << mNumStrips) - 1);
+  setModeAny();
 }
 
 void MultiNeoPixel::clearAll(void) {
@@ -70,23 +70,45 @@ void MultiNeoPixel::clearAll(void) {
 }
 
 void MultiNeoPixel::show(void) {
-  if (mRequiresBegin) {
-    begin();
-    mRequiresBegin = 0;
+  switch (mAddressMode) {
+  case ADDRESS_ANY:
+    for (uint8_t stripIndex = 0; stripIndex < mNumStrips; ++stripIndex) {
+      showOne(stripIndex);
+    }  
+    break;
+  default:
+  case ADDRESS_ALL:
+    showAll();
+    break;
   }
-  showAll();
 }
 
+void MultiNeoPixel::setModeAll() {
+  mAddressMode = ADDRESS_ALL;
+}
+
+void MultiNeoPixel::setModeAny() {
+  mAddressMode = ADDRESS_ANY;
+}
+
+
+
 void MultiNeoPixel::showAll() {
-  for (uint8_t stripIndex = 0; stripIndex < mNumStrips; stripIndex++) {
-    showOne(stripIndex);
-  }
+  setPinMask((1 << mNumStrips) - 1);
+  performShow(mPixels);
 }
 
 void MultiNeoPixel::showOne(uint8_t stripIndex) {
+  setPinMask(1 << stripIndex);
+//  setPinMask(0x01);
+  uint8_t* stripBuffer = &mPixels[3 * mPixelsPerStrip * stripIndex];
+  //uint8_t* stripBuffer = mPixels;
+  performShow(stripBuffer);
+}
 
-  if(!mPixels) return;
-
+void MultiNeoPixel::performShow(uint8_t* stripBuffer) {
+  if(!stripBuffer) return;
+    
   // Data latch = 50+ microsecond pause in the output stream.  Rather than
   // put a delay at the end of the function, the ending time is noted and
   // the function will simply hold off (if needed) on issuing the
@@ -115,7 +137,7 @@ void MultiNeoPixel::showOne(uint8_t stripIndex) {
   volatile uint16_t
     i   = mBytesPerStrip; // Loop counter
   volatile uint8_t
-   *ptr = mPixels,   // Pointer to next byte
+   *ptr = stripBuffer,   // Pointer to next byte
     b   = *ptr++,   // Current byte value
     hi,             // PORT w/output bit set high
     lo;             // PORT w/output bit set low
@@ -698,7 +720,7 @@ void MultiNeoPixel::showOne(uint8_t stripIndex) {
 #define CYCLES_400_T1H  (F_CPU /  833333)
 #define CYCLES_400      (F_CPU /  400000)
 
-  uint8_t          *p   = mPixels,
+  uint8_t          *p   = stripBuffer,
                    *end = p + mBytesPerStrip, pix, mask;
   volatile uint8_t *set = mPortSetRegister(pin),
                    *clr = mPortClearRegister(pin);
@@ -775,7 +797,7 @@ void MultiNeoPixel::showOne(uint8_t stripIndex) {
   portClear = &(mPort->PIO_CODR);            // starting timer to minimize
   timeValue = &(TC1->TC_CHANNEL[0].TC_CV);  // the initial 'while'.
   timeReset = &(TC1->TC_CHANNEL[0].TC_CCR);
-  p         =  mPixels;
+  p         =  stripBuffer;
   end       =  p + mBytesPerStrip;
   pix       = *p++;
   mask      = 0x80;
@@ -836,11 +858,11 @@ void MultiNeoPixel::setPinMask(uint8_t mask) {
   // Set all these pins to digital out mode
   uint8_t pinMask = mPinMask;
   for (uint8_t pin=0; pin<8; pin++){
-    if (pinMask & 1) {
+    //if (pinMask & 1) {
       pinMode(pin, OUTPUT);
       digitalWrite(pin, LOW);
-    }
-    pinMask >>= 1;
+    //}
+    //pinMask >>= 1;
   }
 }
 
