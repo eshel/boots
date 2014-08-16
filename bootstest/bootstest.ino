@@ -24,7 +24,7 @@ unsigned long current_time = 0;
 
 void setup() {
   //Serial.begin(9600);
-  strip.begin();
+  //strip.begin();
   strip.show(); // Initialize all pixels to 'off'
   last_update = millis();
 }
@@ -47,26 +47,24 @@ void loop() {
   //theaterChaseRainbow(50);
   current_time = millis();
   do_particles();
+  test_pattern();
   last_update = current_time;
   delay(10); // important to have this!
   
 }
 
+void test_pattern() {
 
-  
+}
+
+
 void do_particles() {
-
-  // TODO: move to function
-  // clear all pixels
-  for(int i = 0; i < STRIP_LENGTH; i++) {
-    strip.setPixelColor(i, 0);
-  }
-  
+  strip.clearAll();
   particles.runFrame(current_time);
-
   strip.show();
 }
 
+/*
 void rainbow(uint8_t wait) {
   uint16_t i, j;
 
@@ -92,5 +90,4 @@ void rainbowCycle(uint8_t wait) {
   }
 }
 
-
-
+*/

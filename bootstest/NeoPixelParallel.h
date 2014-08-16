@@ -40,63 +40,226 @@
 #endif
 
 typedef enum {
-  MODE_INDIVIDUAL = 0,
-  MODE_ALL,
-  _MODE_NUM
-} StripsMode;
-
-#define GET_R(rgb)
-#define GET_G(rgb)
-#define GET_B(rgb)
-
-#define SET_R(rgb, r)
-#define SET_G(rgb, g)
-#define SET_B(rgb, b)
-
-#define SET_RGB(rgb, r, g, b)
+  ADDRESS_ANY = 0,
+  ADDRESS_ALL,
+  _ADDRESS_NUM
+} EAddressMode;
 
 class MultiNeoPixel {
 
- public:
+public:
 
   // Constructor: number of LEDs, LED type
-  MultiNeoPixel(uint8_t stripsNum, uint16_t pixelsInStrip, uint8_t ledType);
+  MultiNeoPixel(uint8_t sizeX, uint16_t sizeY, uint8_t ledType);
   ~MultiNeoPixel();
 
   void begin(void);
-  void show(void);
   
-  uint8_t getSizeX();
-  uint8_t getSizeY();
+  void show(void);
+  void showAll(void);
+  void showOne(uint8_t stripIndex);
+  
+  inline uint8_t getSizeX() {
+    return mNumStrips;
+  }
+  
+  inline uint8_t getSizeY() {
+    return mPixelsPerStrip;
+  }
+  
+  inline uint16_t getSizePixels() {
+    return mNumPixels;
+  }
+  
+  void setAddessMode(EAddressMode addressMode) {
+    switch (addressMode) {
+    case ADDRESS_ANY:
+      setModeAny();
+      break;
+    case ADDRESS_ALL:
+    default:
+      setModeAll();
+    }  
+  }
+  
+  void clearAll();  
   
   void setModeAll();
-  void setModeIndividual();
+  void setModeAny();
     
   void setPinMask(uint8_t mask);
   void setPin(uint8_t p);
-  
-  void setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b);
-  void setPixelColor(uint16_t n, uint32_t c);
+    
   void addPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b);
   
-  uint8_t* getPixels() const;
-  uint16_t numPixels(void) const;
-  static uint32_t Color(uint8_t r, uint8_t g, uint8_t b);
-  uint32_t getPixelColor(uint16_t n) const;
+  inline uint8_t* getPixels() const {
+    return mPixels;
+  }
+  
+  inline uint16_t numPixels(void) const {
+    return mPixelsPerStrip;
+  }
+  
+  inline uint8_t getNumStrips(void) const {
+    return mNumStrips;
+  }
+  
+  inline uint16_t index(uint8_t x, uint8_t y) const {
+    return (x * mNumStrips) + y;
+  }
+  
+// Convert separate R,G,B into packed 32-bit RGB color.
+// Packed format is always RGB, regardless of LED strand color order.  
+  static inline uint32_t Color(uint8_t r, uint8_t g, uint8_t b) {
+    return ((uint32_t)r << 16) | ((uint32_t)g <<  8) | b;
+  }
+  
+  inline uint32_t getPixelColor(uint16_t n) const {
+    uint16_t ofs = n * 3;
+    return (uint32_t)(mPixels[ofs + 2]) |
+#ifdef NEO_RGB
+      (((mType & NEO_COLMASK) == NEO_GRB) ?
+#endif
+        ((uint32_t)(mPixels[ofs    ]) <<  8) |
+        ((uint32_t)(mPixels[ofs + 1]) << 16)
+#ifdef NEO_RGB
+      :
+        ((uint32_t)(mPixels[ofs    ]) << 16) |
+        ((uint32_t)(mPixels[ofs + 1]) <<  8) )
+#endif
+      ;
+  }
+  
+  inline void setPixelColor(uint8_t x, uint8_t y, uint8_t r, uint8_t g, uint8_t b) {
+    setPixelColor(index(x, y), r, g, b);
+  }
+  
+  inline void setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b) {
+    uint8_t *p = &mPixels[n * 3];
+#ifdef NEO_RGB
+    if((mType & NEO_COLMASK) == NEO_GRB) {
+#endif
+      *p++ = g;
+      *p++ = r;
+#ifdef NEO_RGB
+    } else {
+      *p++ = r;
+      *p++ = g;
+    }
+#endif
+    *p = b;
+  }
 
- private:
+// Set pixel color from 'packed' 32-bit RGB color:
+  inline void setPixelColor(uint16_t n, uint32_t c) {
+    uint8_t
+      r = (uint8_t)(c >> 16),
+      g = (uint8_t)(c >>  8),
+      b = (uint8_t)c;
+    uint8_t *p = &mPixels[n * 3];
+#ifdef NEO_RGB
+    if((mType & NEO_COLMASK) == NEO_GRB) {
+#endif
+      *p++ = g;
+      *p++ = r;
+#ifdef NEO_RGB
+    } else {
+      *p++ = r;
+      *p++ = g;
+    }
+#endif
+    *p = b;
+  }  
+  
+private:
   const uint16_t mPixelsPerStrip;       // Number of RGB LEDs in strip
   const uint16_t mBytesPerStrip;      // Size of 'pixels' buffer below
+  const uint16_t mNumPixels;
+  const uint16_t mNumBytes;
 #if defined(NEO_RGB) || defined(NEO_KHZ400)
-  const uint8_t type;          // Pixel flags (400 vs 800 KHz, RGB vs GRB color)
+  const uint8_t mType;          // Pixel flags (400 vs 800 KHz, RGB vs GRB color)
 #endif
-  uint8_t* pixels;        // Holds LED color values (3 bytes each)
-  uint32_t endTime;       // Latch timing reference
+  uint8_t* mPixels;        // Holds LED color values (3 bytes each)
+  uint8_t mNumStrips;      // Number of parallel LED strips we have connected
+  uint32_t mEndTime;       // Latch timing reference
+  uint8_t mRequiresBegin;
 #ifdef __AVR__
-  const volatile uint8_t* port;         // Output PORT register
+  const volatile uint8_t* mPort;         // Output PORT register
   uint8_t mPinMask;       // Output PORT bitmask
 #endif
 
+
+
+public:
+
+  inline const uint8_t* getCPtrR(uint16_t n) const {
+    return    
+#ifdef NEO_RGB
+        (((mType & NEO_COLMASK) == NEO_GRB) ?
+#endif
+          &mPixels[n*3 + 1]
+#ifdef NEO_RGB
+          : &mPixels[n*3] )
+#endif
+        ;
+  }
+  
+  inline uint8_t* getPtrR(uint16_t n) {
+    return (uint8_t*)getCPtrR(n);
+  }
+  
+
+  inline const uint8_t getPixelR(uint16_t n) const {
+    return *getCPtrR(n);
+  }
+  
+  inline void setPixelR(uint16_t n, uint8_t r) {
+    *getPtrR(n) = r;
+  }
+    
+  
+  inline const uint8_t* getCPtrG(uint16_t n) const {
+    return    
+#ifdef NEO_RGB
+        (((mType & NEO_COLMASK) == NEO_GRB) ?
+#endif
+          &mPixels[n*3]
+#ifdef NEO_RGB
+          : &mPixels[n*3 + 1] )
+#endif
+        ;
+  }
+  
+  inline uint8_t* getPtrG(uint16_t n) {
+    return (uint8_t*)getCPtrG(n);
+  }
+  
+  inline const uint8_t getPixelG(uint16_t n) const {
+    return *getCPtrG(n);
+  }
+  
+  inline void setPixelG(uint16_t n, uint8_t g) {
+    *getPtrG(n) = g;
+  }
+  
+  inline const uint8_t* const getCPtrB(uint16_t n) const {
+    return &mPixels[n*3 + 2]; 
+  }
+  
+  inline uint8_t* getPtrB(uint16_t n) {
+    return (uint8_t*)getCPtrB(n);
+  }
+  
+  inline const uint8_t getPixelB(uint16_t n) const {
+    return *getCPtrB(n);
+  }
+  
+  inline void setPixelB(uint16_t n, uint8_t b) {
+    *getPtrB(n) = b;
+    
+  }
+  
 };
+
 
 #endif // ADAFRUIT_NEOPIXEL_H
