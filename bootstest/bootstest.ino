@@ -2,6 +2,15 @@
 #include "Particle.h"
 #include "ColorUtils.h"
 
+#include "Wire.h"
+#include "I2Cdev.h"
+#include "MPU6050.h"
+MPU6050 accelgyro(0x68);
+
+int16_t ax, ay, az;
+int16_t gx, gy, gz;
+
+
 //   NEO_KHZ800  800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
 //   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
 //   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
@@ -23,11 +32,30 @@ void setup() {
   //Serial.begin(9600);
   randomSeed(analogRead(8));
 
+  Serial.begin(38400);
+  setupIMU();
+
   strip.begin();
   strip.show(); // Initialize all pixels to 'off'
   
   last_update = millis();
 }
+
+
+void setupIMU() {
+  // join I2C bus (I2Cdev library doesn't do this automatically)
+  Wire.begin();
+
+  // initialize device
+  Serial.println("Initializing I2C devices...");
+  accelgyro.initialize();
+
+  delay(3000);
+
+  // verify connection
+  Serial.println("Testing device connections...");
+  Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
+}  
 
 static uint32_t sFrameNo = 0;
 
@@ -41,6 +69,22 @@ void loop() {
   
   sFrameNo++;
   delay(30); // important to have this!
+  
+  // read raw accel/gyro measurements from devic
+  accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+
+  // these methods (and a few others) are also available
+  //accelgyro.getAcceleration(&ax, &ay, &az);
+  //accelgyro.getRotation(&gx, &gy, &gz);
+
+  // display tab-separated accel/gyro x/y/z values
+  Serial.print("a/g:\t");
+  Serial.print(ax); Serial.print("\t");
+  Serial.print(ay); Serial.print("\t");
+  Serial.print(az); Serial.print("\t");
+  Serial.print(gx); Serial.print("\t");
+  Serial.print(gy); Serial.print("\t");
+  Serial.println(gz);  
 }
 
 static uint8_t x = 0;
