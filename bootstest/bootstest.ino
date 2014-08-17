@@ -40,7 +40,7 @@ void loop() {
   last_update = current_time;
   
   sFrameNo++;
-  delay(15); // important to have this!
+  delay(30); // important to have this!
 }
 
 static uint8_t x = 0;

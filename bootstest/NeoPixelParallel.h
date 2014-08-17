@@ -96,7 +96,7 @@ public:
   void setModeAll();
   void setModeAny();
     
-  void setPinMask(uint8_t mask);
+  void setPinMask(uint16_t mask);
   void setPin(uint8_t p);
     
   void addPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b);

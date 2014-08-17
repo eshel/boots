@@ -34,7 +34,24 @@
 #include "NeoPixelParallel.h"
 
 
-static const uint8_t s_PinMasks[7] = {
+#if defined(__AVR_ATmega32U4__)
+#define ARDUINO_IS_PRO_MICRO  1
+#else
+#define ARDUINO_IS_PRO_MICRO  0
+#endif
+
+#if (ARDUINO_IS_PRO_MICRO)
+static const uint16_t s_PinMasks[7] = {
+  (1 << 4), 
+  (1 << 5),
+  (1 << 6),
+  (1 << 7),
+  (1 << 8),
+  (1 << 9),
+  (1 << 10)
+};
+#else
+static const uint16_t s_PinMasks[7] = {
   (1 << 0), 
   (1 << 1),
   (1 << 2),
@@ -43,8 +60,9 @@ static const uint8_t s_PinMasks[7] = {
   (1 << 5),
   (1 << 6)
 };
+#endif
 
-static const uint8_t s_PinMaskAll = 
+static const uint16_t s_PinMaskAll = 
   s_PinMasks[0] |
   s_PinMasks[1] |
   s_PinMasks[2] |
@@ -886,13 +904,13 @@ void MultiNeoPixel::performShow(uint8_t* stripBuffer) {
   mEndTime = micros(); // Save EOD time for latch on next call
 }
 
-void MultiNeoPixel::setPinMask(uint8_t mask) {
-  uint8_t realMask = 0;
+void MultiNeoPixel::setPinMask(uint16_t mask) {
+  uint16_t realMask = 0;
   const volatile uint8_t* prevPort = 0;
   
   // Find out the physical pins, empirically (using the old driver's setPin())
   mPinMask = 0;
-  for(int i = 0; i < 8; i++) { 
+  for(int i = 0; i < 16; i++) { 
     if (mask & 1) {
       pinMode(i, OUTPUT);
       digitalWrite(i, LOW);
