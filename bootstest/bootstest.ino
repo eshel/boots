@@ -10,6 +10,9 @@ MPU6050 accelgyro(0x68);
 int16_t ax, ay, az;
 int16_t gx, gy, gz;
 
+#define LED_PIN  17
+#define LED_ON   false
+#define LED_OFF  true
 
 //   NEO_KHZ800  800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
 //   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
@@ -49,12 +52,17 @@ void setupIMU() {
   // initialize device
   Serial.println("Initializing I2C devices...");
   accelgyro.initialize();
+  accelgyro.setFullScaleAccelRange(MPU6050_ACCEL_FS_8);
+
 
   delay(3000);
 
   // verify connection
   Serial.println("Testing device connections...");
   Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
+  
+  // configure Arduino LED for
+  pinMode(LED_PIN, OUTPUT);
 }  
 
 static uint32_t sFrameNo = 0;
@@ -66,10 +74,7 @@ void loop() {
   test_pattern();
   //random_blips(1);
   last_update = current_time;
-  
-  sFrameNo++;
-  delay(30); // important to have this!
-  
+    
   // read raw accel/gyro measurements from devic
   accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
 
@@ -85,6 +90,16 @@ void loop() {
   Serial.print(gx); Serial.print("\t");
   Serial.print(gy); Serial.print("\t");
   Serial.println(gz);  
+  
+  sFrameNo++;
+
+  if (ax > 0) {
+    digitalWrite(LED_PIN, LED_ON);
+  } else {
+    digitalWrite(LED_PIN, LED_OFF);
+  }
+
+  delay(30); // important to have this!  
 }
 
 static uint8_t x = 0;
