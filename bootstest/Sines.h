@@ -29,9 +29,13 @@ public:
 	void sinRainbow() {
 		for(uint16_t x=0; x < mStrip.getSizeX(); x++) {
 			for(uint16_t y=0; y < mStrip.getSizeY(); y++) {
-				int val = 128*(sin(x*PI/180) + sin(y*PI/177));
+				int val = 64*(sin((x*11 + getFrameCount())/15.f) + sin((y*7 + getFrameCount())/13.f));
 				if (val < 0) val = 0;
-				mStrip.setPixelColor(x,y, Wheel((x+y+getFrameCount()) % 768, val));
+				int val2 = 384 + 192*(sin((x*7 - getFrameCount())/13.f) + sin((y*11 + getFrameCount())/15.f));
+				if (val2 < 0) val2 = 0;
+				int val3 = 64*(sin((x*11 + getFrameCount())/27.f) + sin((y*11 - getFrameCount())/17.f));
+				if (val3 < 0) val3 = 0;
+				mStrip.setPixelColor(x,y, Wheel(val2, max(val-15, 0)));
 			}
 		}
 	}
