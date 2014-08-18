@@ -71,6 +71,12 @@ static const uint16_t s_PinMaskAll =
   s_PinMasks[5] |
   s_PinMasks[6];
 
+
+const uint32_t MultiNeoPixel::WHITE = MultiNeoPixel::Color(255, 255, 255);
+const uint32_t MultiNeoPixel::RED = MultiNeoPixel::Color(255, 0, 0);
+const uint32_t MultiNeoPixel::GREEN = MultiNeoPixel::Color(0, 255, 0);
+const uint32_t MultiNeoPixel::BLUE = MultiNeoPixel::Color(0, 0, 255);
+
 MultiNeoPixel::MultiNeoPixel(uint8_t sizeX, uint16_t sizeY, uint8_t ledType) : 
   mAddressMode(ADDRESS_ALL),
   mPixelsPerStrip(sizeY), 
@@ -107,11 +113,12 @@ void MultiNeoPixel::clearAll(void) {
   memset(mPixels, 0, mNumBytes);
 }
 
-void MultiNeoPixel::divideAll(uint8_t d) {
+void MultiNeoPixel::multAll(uint8_t nom, uint8_t denom) {
   for (uint8_t* p = mPixels; p < mPixels + mNumBytes; p++) {
-    uint8_t val = *p;
-    val /= d;
-    *p = val;
+    uint32_t val = (uint32_t)*p;
+    val *= nom;
+    val /= denom;
+    *p = (uint8_t)val;
   }
 }
 

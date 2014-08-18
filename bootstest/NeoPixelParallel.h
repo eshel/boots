@@ -90,7 +90,7 @@ public:
   }
   
   void clearAll();  
-  void divideAll(uint8_t d);
+  void multAll(uint8_t nom, uint8_t denom);
   void addAll(int8_t d);
   
   void setModeAll();
@@ -124,11 +124,29 @@ public:
   inline uint16_t index(uint8_t x, uint8_t y) const {
     return ((uint16_t)x * (uint16_t)mNumStrips) + (uint16_t)y;
   }
+
+  inline uint16_t cyclicIndex(int8_t x, int8_t y) const {
+    x = x % getSizeX();
+    y = y % getSizeY();
+    return index(x, y);
+  }
   
 // Convert separate R,G,B into packed 32-bit RGB color.
 // Packed format is always RGB, regardless of LED strand color order.  
   static inline uint32_t Color(uint8_t r, uint8_t g, uint8_t b) {
     return ((uint32_t)r << 16) | ((uint32_t)g <<  8) | b;
+  }
+
+  static inline uint8_t R(uint32_t c) {
+    return (uint8_t)(c >> 16);
+  }
+
+  static inline uint8_t G(uint32_t c) {
+    return (uint8_t)(c >> 8);
+  }
+
+  static inline uint8_t B(uint32_t c) {
+    return (uint8_t)(c >> 0);
   }
   
   inline uint32_t getPixelColor(uint16_t n) const {
@@ -238,6 +256,14 @@ public:
     *getPtrR(n) = r;
   }
     
+  inline const uint8_t getPixelR(uint8_t x, uint8_t y) const {
+    return getPixelR(index(x, y));
+  }
+  
+  inline void setPixelR(uint8_t x, uint8_t y, uint8_t r) {
+    setPixelR(index(x, y), r);
+  }
+
   
   inline const uint8_t* getCPtrG(uint16_t n) const {
     return    
@@ -263,6 +289,15 @@ public:
     *getPtrG(n) = g;
   }
   
+  inline const uint8_t getPixelG(uint8_t x, uint8_t y) const {
+    return getPixelG(index(x, y));
+  }
+  
+  inline void setPixelG(uint8_t x, uint8_t y, uint8_t r) {
+    setPixelG(index(x, y), r);
+  }
+
+
   inline const uint8_t* const getCPtrB(uint16_t n) const {
     return &mPixels[n*3 + 2]; 
   }
@@ -276,9 +311,21 @@ public:
   }
   
   inline void setPixelB(uint16_t n, uint8_t b) {
-    *getPtrB(n) = b;
-    
+    *getPtrB(n) = b; 
   }
+
+  inline const uint8_t getPixelB(uint8_t x, uint8_t y) const {
+    return getPixelB(index(x, y));
+  }
+  
+  inline void setPixelB(uint8_t x, uint8_t y, uint8_t r) {
+    setPixelB(index(x, y), r);
+  }
+
+  static const uint32_t WHITE;
+  static const uint32_t RED;
+  static const uint32_t GREEN;
+  static const uint32_t BLUE;
   
 };
 

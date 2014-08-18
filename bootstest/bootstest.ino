@@ -1,14 +1,13 @@
 #include "NeoPixelParallel.h"
 #include "Particle.h"
 #include "ColorUtils.h"
+#include "Motion.h"
+#include "Walker.h"
 
 #include "Wire.h"
 #include "I2Cdev.h"
 #include "MPU6050.h"
-MPU6050 accelgyro(0x68);
 
-int16_t ax, ay, az;
-int16_t gx, gy, gz;
 
 #define LED_PIN  17
 #define LED_ON   false
@@ -21,6 +20,11 @@ int16_t gx, gy, gz;
 MultiNeoPixel strip = MultiNeoPixel(7, 16, NEO_GRB + NEO_KHZ800);
 
 ParticleSystem particles(strip);
+
+static uint32_t sFrameNo = 0;
+
+Motion motionSensor;
+Walker walker(strip);
 
 // IMPORTANT: To reduce NeoPixel burnout risk, add 1000 uF capacitor across
 // pixel power leads, add 300 - 500 Ohm resistor on first pixel's data input
@@ -36,78 +40,71 @@ void setup() {
   randomSeed(analogRead(8));
 
   Serial.begin(38400);
-  setupIMU();
+  Wire.begin();
+
+  motionSensor.begin();
+  bool motionOK = motionSensor.test();
+  Serial.println(motionOK ? "Motion init successful" : "Motion init failed");  
+
+  // configure Arduino LED for
+  pinMode(LED_PIN, OUTPUT);
 
   strip.begin();
   strip.show(); // Initialize all pixels to 'off'
+
+  delay(3000);
   
   last_update = millis();
 }
 
 
-void setupIMU() {
-  // join I2C bus (I2Cdev library doesn't do this automatically)
-  Wire.begin();
-
-  // initialize device
-  Serial.println("Initializing I2C devices...");
-  accelgyro.initialize();
-  accelgyro.setFullScaleAccelRange(MPU6050_ACCEL_FS_8);
+void onStep() {
+  //random_blips(3, 10);
+  //strip.setPixelColor(random(0, strip.getSizeX()), random(0, strip.getSizeY()), 255, 255, 255);
+}
 
 
-  delay(3000);
 
-  // verify connection
-  Serial.println("Testing device connections...");
-  Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
-  
-  // configure Arduino LED for
-  pinMode(LED_PIN, OUTPUT);
-}  
-
-static uint32_t sFrameNo = 0;
-
-void loop() {
-  strip.setModeAny();
-  current_time = millis();
-  //do_particles();
-  test_pattern();
-  //random_blips(1);
-  last_update = current_time;
-    
+void doMotion() {
   // read raw accel/gyro measurements from devic
-  accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+  int16_t apower = motionSensor.getAPower();
 
-  // these methods (and a few others) are also available
-  //accelgyro.getAcceleration(&ax, &ay, &az);
-  //accelgyro.getRotation(&gx, &gy, &gz);
-
-  // display tab-separated accel/gyro x/y/z values
-  Serial.print("a/g:\t");
-  Serial.print(ax); Serial.print("\t");
-  Serial.print(ay); Serial.print("\t");
-  Serial.print(az); Serial.print("\t");
-  Serial.print(gx); Serial.print("\t");
-  Serial.print(gy); Serial.print("\t");
-  Serial.println(gz);  
-  
-  sFrameNo++;
-
-  if (ax > 0) {
+  if (abs(apower-1024) > 300) {
     digitalWrite(LED_PIN, LED_ON);
+    onStep();
   } else {
     digitalWrite(LED_PIN, LED_OFF);
   }
 
+}
+
+
+void loop() {
+  motionSensor.sample();
+  motionSensor.print();
+
+  doMotion();
+
+  strip.setModeAny();
+  current_time = millis();
+  //do_particles();
+
+  //strip.addAll(-25);
+  strip.multAll(4, 5);
+
+  test_pattern();
+
+  do_walker();
+  //random_blips(-20, 3);
+
+  last_update = current_time;
+  
+  sFrameNo++;
+
+  strip.show();
   delay(30); // important to have this!  
 }
 
-static uint8_t x = 0;
-static uint8_t y = 0;
-static int wheelPos = 0;
-
-static uint16_t pixelIndex = 0;
-static uint8_t fullIterNum = 0;
 
 #define INC_MOD(x, lim) (x)++; if ((x) >= (lim)) x=0;
 
@@ -121,41 +118,29 @@ void add_random_blip() {
   strip.setPixelColor(pixelIndex, color);
 }  
 
-void random_blips(uint8_t cleanInBetween) {
-  if (cleanInBetween) {
-    strip.addAll(-15);
-  }
-  
+void random_blips(int8_t minPixels, int8_t maxPixels) {
   //delay(random(10, 50));
-  delay(23);
-  uint8_t pixelCount = 1;//random(0, strip.getNumAddresses());
-  for (uint8_t i=0; i<pixelCount; i++) {
+  //delay(23);
+  
+  int8_t newPixels = random(minPixels, maxPixels);
+  if (newPixels < 0) {
+    newPixels = 0;
+  }
+  for (uint8_t i=0; i<(uint8_t)newPixels; i++) {
     add_random_blip();
   }
-  
-  strip.show();
 }
 
 void test_pattern() {
-  draw_test_pattern(1);
-}
-
-
-void draw_test_pattern(uint8_t cleanInBetween) {
+  static uint16_t pixelIndex = 0;
   uint16_t maxPixel = strip.getNumAddresses();
   
-  if (cleanInBetween) {
-    strip.clearAll();
-  }
-    
   uint32_t c = Wheel(sFrameNo % 768);
   strip.setPixelColor(pixelIndex, c);
-  strip.show();
 
   pixelIndex++;
   if (pixelIndex >= maxPixel) {
     pixelIndex = 0;
-    fullIterNum++;
   }
 }
 
@@ -164,6 +149,14 @@ void do_particles() {
   strip.clearAll();
   particles.runFrame(current_time);
   strip.show();
+}
+
+void do_walker() {
+  if (sFrameNo % 32 == 0) {
+    walker.clear();
+    walker.spawn();
+  }
+  walker.step();
 }
 
 /*

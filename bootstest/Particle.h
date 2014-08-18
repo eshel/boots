@@ -25,7 +25,6 @@ public:
       //Serial.println(current_time);
       spawnParticle(current_time);
       //spawn_pulse();
-
     }
     
     // TODO: handle overlapping particles
