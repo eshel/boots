@@ -6,12 +6,20 @@
 class Walker : public Animation {
 public:
 	Walker(MultiNeoPixel& strip, bool active) : Animation(strip, active) {
+		mWrap = false;
 		mPosX = 0;
 		mPosY = 0;
 		mIsActive = false;
-		mSizeX = mStrip.getSizeX();
-		mSizeY = mStrip.getSizeY();
-		mPrevDirection = -1;
+		mSizeX = (int8_t)mStrip.getSizeX();
+		mSizeY = (int8_t)mStrip.getSizeY();
+		mPrevDX = mPrevDY = 0;
+
+		mColorHead = MultiNeoPixel::Color(255, 255, 255);
+		mColorTrail = MultiNeoPixel::Color(0, 255, 0);
+	}
+
+	void setIsWrapping(bool isWrapping) {
+		mWrap = isWrapping;
 	}
 
 	void spawn() {
@@ -19,95 +27,133 @@ public:
 	}
 
 	void spawn(uint8_t x, uint8_t y) {
+		clear();
 		mPosX = x;
 		mPosY = y;
 		mIsActive = true;
-		mStrip.setPixelColor(x, y, MultiNeoPixel::WHITE);
+		mStrip.setPixelColor(x, y, mColorHead);
+		Serial.print("Spawning walker: [");
+		Serial.print(mPosX);
+		Serial.print(",");
+		Serial.print(mPosY);
+		Serial.print("] of [");
+		Serial.print(mSizeX);
+		Serial.print(",");
+		Serial.print(mSizeY);
+		Serial.println("]");
 	}
 
-	static int randomDirection() {
-		int direction = 0;
-		int chance = random(0, 100);
-		if (chance < 90) {
-			direction = random(2, 4);
-		} else {
-			direction = random(0, 2);
-		}
+	void setColorHead(uint8_t r, uint8_t g, uint8_t b) {
+		mColorHead = MultiNeoPixel::Color(r, g, b);
+	}
+
+
+	void setColorTrail(uint8_t r, uint8_t g, uint8_t b) {
+		mColorTrail = MultiNeoPixel::Color(r, g, b);
 	}
 
 protected:
 	virtual void performDraw() {
-		if (getFrameCount() % 32 == 0) {
-			clear();
-			spawn();
-		}
+		uint8_t px = mPosX;
+		uint8_t py = mPosY;
+
 		step();
+
+		Serial.print('[');
+		Serial.print(px);
+		Serial.print(',');
+		Serial.print(py);
+		Serial.print("] --> [");
+		Serial.print(mPosX);
+		Serial.print(',');
+		Serial.print(mPosY);
+		Serial.println(']');
 	}
 
 public:
-	void step() {
-		int direction;
-		if (mPrevDirection == -1) {
-			direction = randomDirection();
-		} else {
-			int chance = random(0, 100);
-			if (chance < 95) {
-				direction = mPrevDirection;
-			} else {
-				direction = randomDirection();
-			}
-		}
-		step(direction);
+	inline bool insideBounds() {
+		return ((mPosX >= 0) && (mPosY >= 0) && (mPosX < mSizeX) && (mPosY < mSizeY));
 	}
 
-	void step(int direction) {
+	inline void fixX() {
+		if (mWrap) {
+			mPosX = mPosX % mSizeX;
+		} else {
+			if (mPosX < 0) {
+				mPosX = 0;
+			} else if (mPosX >= mSizeX) {
+				mPosX = mSizeX - 1;
+			}
+		}
+	}
+
+	inline void fixY() {
+		if (mWrap) {
+			mPosY = mPosY % mSizeY;
+		} else {
+			if (mPosY < 0) {
+				mPosY = 0;
+			} else if (mPosY >= mSizeY) {
+				mPosY = mSizeY - 1;
+			}
+		}
+	}
+
+	inline void fix() {
+		fixX();
+		fixY();
+	}
+
+	static int8_t newDirection() {
+		int8_t d = random(0, 2);
+		if (d == 0) {
+			return -1;
+		} else {
+			return 1;
+		}
+	}	
+
+	void step() {
+		int8_t dx, dy;
+		int chance = random(0, 100);
+		if (chance < 95) {
+			dy = mPrevDY;
+		} else {
+			dy = newDirection();
+		}
+
+		int chance2 = random(0, 1000);
+		if (chance2 < 980) {
+			dx = newDirection();
+		} else {
+			dx = 0;
+		}
+
+		step(dx, dy);
+	}
+
+	void step(int8_t dx, int8_t dy) {
 		if (!mIsActive) {
 			return;
 		}
 		int8_t px = mPosX;
 		int8_t py = mPosY;
 
-		switch (direction) {
-			/*
-		case 0:
-			Serial.println("X+");
-			mPosX++;
-			break;
-		case 1:
-			Serial.println("X-");
-			mPosX--;
-			break;
-			*/
-		case 2:
-			Serial.println("Y+");
-			mPosY++;
-			break;
-		case 3:
-			Serial.println("Y-");
-			mPosY--;
-			break;
-		}
-
-		if (mPosX < 0) {
-			mPosX = 0;
-		} else if (mPosX >= mSizeX) {
-			mPosX = mSizeX - 1;
-		}
-		if (mPosY < 0) {
-			mPosY = 0;
-		} else if (mPosY >= mSizeY) {
-			mPosY = mSizeY - 1;
-		}
+		mPosX += dx;
+		mPosY += dy;
+		fix();
 
 		if ((px != mPosX) || (py != mPosY)) {
-			mStrip.setPixelColor(mPosX, mPosY, 255, 255, 255);
-			mStrip.setPixelColor(px, py, 0, 255, 0);
+			mStrip.setPixelColor(px, py, mColorTrail);
 		}
+		mStrip.setPixelColor(mPosX, mPosY, mColorHead);
 
-		mPrevDirection = direction;
+		mPrevDX = dx;
+		mPrevDY = dy;
 	}
 
 	virtual void begin() {
+		spawn();
 	}
 
 	virtual void clear() {
@@ -125,8 +171,12 @@ private:
 	int8_t mSizeX;
 	int8_t mSizeY;
 	bool mIsActive;
-	int mPrevDirection;
+	int8_t mPrevDX, mPrevDY;
 	uint32_t mFrameNo;
+	bool mWrap;
+
+	uint32_t mColorHead;
+	uint32_t mColorTrail;
 };
 
 

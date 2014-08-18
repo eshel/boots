@@ -20,19 +20,21 @@ MultiNeoPixel strip = MultiNeoPixel(7, 16, NEO_GRB + NEO_KHZ800);
 
 ParticleSystem particles(strip);
 
-static uint32_t sFrameNo = 0;
-
 Motion motionSensor;
 Led led(17);
 
-Disco disco(strip, true);
-Walker walker(strip, false);
-Rain rain(strip, true);
+Disco disco(strip, false);
+Walker walker1(strip, true);
+Walker walker2(strip, false);
+Walker walker3(strip, false);
+Rain rain(strip, false);
 
 Animation* s_Animations[] = {
   &disco,
-  &walker,
-  &rain
+  &rain,
+  &walker1,
+  &walker2,
+  &walker3
 };
 
 static const int s_AnimationsCount = sizeof(s_Animations) / sizeof(Animation*);
@@ -59,12 +61,17 @@ void setup() {
   bool motionOK = motionSensor.test();
   Serial.println(motionOK ? "Motion init successful" : "Motion init failed");  
 
+  walker1.setColorTrail(255, 0, 0);
+  walker2.setColorTrail(0, 255, 0);
+  walker3.setColorTrail(0, 0, 255);
+
   for (Animation** a = s_Animations; a != s_Animations + s_AnimationsCount; ++a) {
     (*a)->begin();
   }
 
   strip.begin();
   strip.show(); // Initialize all pixels to 'off'
+  strip.setModeAny();
 
   delay(3000);
   
@@ -99,7 +106,6 @@ void loop() {
 
   doMotion();
 
-  strip.setModeAny();
   current_time = millis();
   //do_particles();
 
@@ -113,8 +119,6 @@ void loop() {
   }
 
   last_update = current_time;
-  
-  sFrameNo++;
 
   strip.show();
   delay(30); // important to have this!  
