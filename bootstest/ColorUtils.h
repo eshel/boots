@@ -29,7 +29,15 @@ uint32_t Wheel(int WheelPos, byte intensity) {
   }
 }
 
-
+// position 0 -> color 1
+// position 255 -> color 2
+// linearly between them
+uint32_t lerp(uint32_t color1, uint32_t color2, byte position) {
+	uint8_t r = ((color1 & 0xFF) * position + (color2 & 0xFF) * (255 - position)) >> 8;
+	uint8_t g = ((color1 >> 8 & 0xFF) * position + (color2 >> 8 & 0xFF) * (255 - position)) >> 8;
+	uint8_t b = ((color1 >> 16 & 0xFF) * position + (color2 >> 16 & 0xFF) * (255 - position)) >> 8;
+	return r | (g << 8) | (b << 16);
+}
 
 
 #endif
