@@ -60,9 +60,9 @@ void setup() {
   bool motionOK = motionSensor.test();
   Serial.println(motionOK ? "Motion init successful" : "Motion init failed");  
 
-  walker1.setColorTrail(255, 0, 0);
-  walker2.setColorTrail(0, 255, 0);
-  walker3.setColorTrail(0, 0, 255);
+  //walker1.setColorTrail(255, 0, 0);
+  //walker2.setColorTrail(0, 255, 0);
+  //walker3.setColorTrail(0, 0, 255);
 
   for (Animation** a = s_Animations; a != s_Animations + s_AnimationsCount; ++a) {
     (*a)->begin();
