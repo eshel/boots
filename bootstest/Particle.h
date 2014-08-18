@@ -6,7 +6,7 @@
 #include "ColorUtils.h"
 
 #define MAX_PARTICLES 10
-#define SPAWN_TIME 311
+#define SPAWN_TIME 10311
 
 class ParticleSystem {
 public:
@@ -30,7 +30,7 @@ public:
     // TODO: handle overlapping particles
     int time_delta = current_time - last_update_time;
     // delta xfor pulse - speed at 16 pixels per second
-    int pos_delta = ((uint32_t)time_delta * 1130*16) / 1000;
+    int pos_delta = 15;//((uint32_t)time_delta * 1130*16) / 1000;
   
     for(int i = 0; i < MAX_PARTICLES; i++) {
       if (!particles[i].alive) continue;
@@ -64,12 +64,15 @@ public:
 protected:  
   
   void drawParticle(int i) {
-    for(int x = max(0,particles[i].pos - particles[i].radius); x < min(256*16, particles[i].pos + particles[i].radius); x += 256) {
+    for(int x = (max(0,particles[i].pos - particles[i].radius)& (~0xff)); x < (min(256*16, particles[i].pos + particles[i].radius + 255) & (~0xff)); x += 256) {
       
-      int closeness = particles[i].radius - abs(particles[i].pos - x);
+      // shift-left by 4 is to scale the distance from fixed-point pixels ( [0..16) with 256 steps per whole number)
+      // to fixed point ([0..1) with 256 levels. This is important because otherwise we overflow 16-bit integers in the next
+      // multiplication
+      int closeness = max(particles[i].radius - abs(particles[i].pos - x), 0) >> 4;
       //Serial.print(x); Serial.print(", ");
-      strip.setPixelColor(x >> 8, (particles[i].r * closeness) / particles[i].radius, (particles[i].g * closeness) / particles[i].radius, (particles[i].b * closeness) / particles[i].radius);
-      //strip.setPixelColor(x >> 4, 124,221,0);
+      strip.setPixelColor(x >> 8, (particles[i].r * closeness) / (particles[i].radius >> 4), (particles[i].g * closeness)  / (particles[i].radius >> 4), (particles[i].b * closeness) / (particles[i].radius >> 4));
+      //strip.setPixelColor(x >> 8, 124,221,0);
     }
   }
 
