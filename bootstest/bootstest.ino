@@ -3,15 +3,14 @@
 #include "ColorUtils.h"
 #include "Motion.h"
 #include "Walker.h"
-
+#include "Animation.h"
+#include "Disco.h"
+#include "Rain.h"
+#include "Led.h"
 #include "Wire.h"
 #include "I2Cdev.h"
 #include "MPU6050.h"
 
-
-#define LED_PIN  17
-#define LED_ON   false
-#define LED_OFF  true
 
 //   NEO_KHZ800  800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
 //   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
@@ -24,7 +23,20 @@ ParticleSystem particles(strip);
 static uint32_t sFrameNo = 0;
 
 Motion motionSensor;
-Walker walker(strip);
+Led led(17);
+
+Disco disco(strip, true);
+Walker walker(strip, false);
+Rain rain(strip, true);
+
+Animation* s_Animations[] = {
+  &disco,
+  &walker,
+  &rain
+};
+
+static const int s_AnimationsCount = sizeof(s_Animations) / sizeof(Animation*);
+
 
 // IMPORTANT: To reduce NeoPixel burnout risk, add 1000 uF capacitor across
 // pixel power leads, add 300 - 500 Ohm resistor on first pixel's data input
@@ -41,13 +53,15 @@ void setup() {
 
   Serial.begin(38400);
   Wire.begin();
+  led.begin();
 
   motionSensor.begin();
   bool motionOK = motionSensor.test();
   Serial.println(motionOK ? "Motion init successful" : "Motion init failed");  
 
-  // configure Arduino LED for
-  pinMode(LED_PIN, OUTPUT);
+  for (Animation** a = s_Animations; a != s_Animations + s_AnimationsCount; ++a) {
+    (*a)->begin();
+  }
 
   strip.begin();
   strip.show(); // Initialize all pixels to 'off'
@@ -70,10 +84,10 @@ void doMotion() {
   int16_t apower = motionSensor.getAPower();
 
   if (abs(apower-1024) > 300) {
-    digitalWrite(LED_PIN, LED_ON);
+    led.on();
     onStep();
   } else {
-    digitalWrite(LED_PIN, LED_OFF);
+    led.off();
   }
 
 }
@@ -92,10 +106,11 @@ void loop() {
   //strip.addAll(-25);
   strip.multAll(4, 5);
 
-  test_pattern();
-
-  do_walker();
-  //random_blips(-20, 3);
+  for (Animation** a = s_Animations; a != s_Animations + s_AnimationsCount; ++a) {
+    if ((*a)->isActive()) {
+      (*a)->draw();
+    }
+  }
 
   last_update = current_time;
   
@@ -108,55 +123,10 @@ void loop() {
 
 #define INC_MOD(x, lim) (x)++; if ((x) >= (lim)) x=0;
 
-
-void add_random_blip() {
-  uint16_t maxPixel = strip.getNumAddresses();
-  uint16_t colorOffset = random(0, (256*3));
-  uint32_t color = Wheel(colorOffset);
-  uint16_t pixelIndex = random(0, maxPixel);
-  
-  strip.setPixelColor(pixelIndex, color);
-}  
-
-void random_blips(int8_t minPixels, int8_t maxPixels) {
-  //delay(random(10, 50));
-  //delay(23);
-  
-  int8_t newPixels = random(minPixels, maxPixels);
-  if (newPixels < 0) {
-    newPixels = 0;
-  }
-  for (uint8_t i=0; i<(uint8_t)newPixels; i++) {
-    add_random_blip();
-  }
-}
-
-void test_pattern() {
-  static uint16_t pixelIndex = 0;
-  uint16_t maxPixel = strip.getNumAddresses();
-  
-  uint32_t c = Wheel(sFrameNo % 768);
-  strip.setPixelColor(pixelIndex, c);
-
-  pixelIndex++;
-  if (pixelIndex >= maxPixel) {
-    pixelIndex = 0;
-  }
-}
-
-
 void do_particles() {
   strip.clearAll();
   particles.runFrame(current_time);
   strip.show();
-}
-
-void do_walker() {
-  if (sFrameNo % 32 == 0) {
-    walker.clear();
-    walker.spawn();
-  }
-  walker.step();
 }
 
 /*
