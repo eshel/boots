@@ -33,7 +33,9 @@ Sines sines(strip, true);
 
 Animation* s_Animations[] = {
   &disco,
-  &walker,
+  &walker1,
+  &walker2,
+  &walker3,
   &rain,
   &sines
 };
