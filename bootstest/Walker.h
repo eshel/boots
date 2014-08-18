@@ -2,21 +2,29 @@
 #define _WALKER_H_
 
 #include "Animation.h"
+#include "ColorUtils.h"
 
 class Walker : public Animation {
 public:
 	Walker(MultiNeoPixel& strip, bool active) : Animation(strip, active) {
-		mWrap = false;
+		mWrap = true;
 		mPosX = 0;
 		mPosY = 0;
 		mIsActive = false;
 		mSizeX = (int8_t)mStrip.getSizeX();
 		mSizeY = (int8_t)mStrip.getSizeY();
 		mPrevDX = mPrevDY = 0;
+		mMaxJumpX = 2;
+		mCycleTrailColor = true;
 
 		mColorHead = MultiNeoPixel::Color(255, 255, 255);
-		mColorTrail = MultiNeoPixel::Color(0, 255, 0);
+		mColorTrailHue = 0;
 	}
+
+	void setColorTrailRandom() {
+		mColorTrailHue = random(0, 678);
+	}
+
 
 	void setIsWrapping(bool isWrapping) {
 		mWrap = isWrapping;
@@ -32,30 +40,26 @@ public:
 		mPosY = y;
 		mIsActive = true;
 		mStrip.setPixelColor(x, y, mColorHead);
-		Serial.print("Spawning walker: [");
-		Serial.print(mPosX);
-		Serial.print(",");
-		Serial.print(mPosY);
-		Serial.print("] of [");
-		Serial.print(mSizeX);
-		Serial.print(",");
-		Serial.print(mSizeY);
-		Serial.println("]");
 	}
 
 	void setColorHead(uint8_t r, uint8_t g, uint8_t b) {
 		mColorHead = MultiNeoPixel::Color(r, g, b);
 	}
 
-
-	void setColorTrail(uint8_t r, uint8_t g, uint8_t b) {
-		mColorTrail = MultiNeoPixel::Color(r, g, b);
+	void setColorTrailHue(uint16_t hue) {
+		mColorTrailHue = hue;
 	}
 
 protected:
 	virtual void performDraw() {
-		uint8_t px = mPosX;
-		uint8_t py = mPosY;
+		int8_t px = mPosX;
+		int8_t py = mPosY;
+
+		if (mCycleTrailColor) {
+			//if (getFrameCount() % 2 == 0) {
+				mColorTrailHue++;
+			//}
+		}
 
 		step();
 
@@ -77,7 +81,12 @@ public:
 
 	inline void fixX() {
 		if (mWrap) {
-			mPosX = mPosX % mSizeX;
+			while (mPosX < 0) {
+				mPosX += mSizeX;
+			}
+			while (mPosX >= mSizeX) {
+				mPosX -= mSizeX;
+			}
 		} else {
 			if (mPosX < 0) {
 				mPosX = 0;
@@ -89,7 +98,12 @@ public:
 
 	inline void fixY() {
 		if (mWrap) {
-			mPosY = mPosY % mSizeY;
+			while (mPosY < 0) {
+				mPosY += mSizeY;
+			}
+			while (mPosY >= mSizeY) {
+				mPosY -= mSizeY;
+			}
 		} else {
 			if (mPosY < 0) {
 				mPosY = 0;
@@ -123,8 +137,10 @@ public:
 		}
 
 		int chance2 = random(0, 1000);
-		if (chance2 < 980) {
-			dx = newDirection();
+		if (chance2 > 960) {
+			do {
+				dx = random(-mMaxJumpX, mMaxJumpX);
+			} while (dx == 0);
 		} else {
 			dx = 0;
 		}
@@ -144,7 +160,7 @@ public:
 		fix();
 
 		if ((px != mPosX) || (py != mPosY)) {
-			mStrip.setPixelColor(px, py, mColorTrail);
+			mStrip.setPixelColor(px, py, Wheel(mColorTrailHue));
 		}
 		mStrip.setPixelColor(mPosX, mPosY, mColorHead);
 
@@ -153,6 +169,7 @@ public:
 	}
 
 	virtual void begin() {
+		setColorTrailRandom();
 		spawn();
 	}
 
@@ -165,6 +182,10 @@ public:
 		mIsActive = 0;
 	}
 
+	void setMaxJumpX(int8_t maxJumpX) {
+		mMaxJumpX = maxJumpX;
+	}
+
 private:
 	int8_t mPosX;
 	int8_t mPosY;
@@ -174,9 +195,12 @@ private:
 	int8_t mPrevDX, mPrevDY;
 	uint32_t mFrameNo;
 	bool mWrap;
+	bool mCycleTrailColor;
 
 	uint32_t mColorHead;
-	uint32_t mColorTrail;
+	uint16_t mColorTrailHue;
+
+	int8_t mMaxJumpX;
 };
 
 

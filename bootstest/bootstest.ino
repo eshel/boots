@@ -25,7 +25,9 @@ Motion motionSensor;
 Led led(17);
 
 Disco disco(strip, false);
-Walker walker(strip, false);
+Walker walker1(strip, true);
+Walker walker2(strip, true);
+Walker walker3(strip, true);
 Rain rain(strip, false);
 Sines sines(strip, true);
 
@@ -59,10 +61,6 @@ void setup() {
   motionSensor.begin();
   bool motionOK = motionSensor.test();
   Serial.println(motionOK ? "Motion init successful" : "Motion init failed");  
-
-  walker1.setColorTrail(255, 0, 0);
-  walker2.setColorTrail(0, 255, 0);
-  walker3.setColorTrail(0, 0, 255);
 
   for (Animation** a = s_Animations; a != s_Animations + s_AnimationsCount; ++a) {
     (*a)->begin();
