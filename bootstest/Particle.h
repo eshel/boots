@@ -21,16 +21,13 @@ public:
   
   void runFrame(unsigned long current_time) {
     if (current_time - last_spawn_time > SPAWN_TIME) {
-      //Serial.print("spawning: ");
-      //Serial.println(current_time);
       spawnParticle(current_time);
-      //spawn_pulse();
     }
     
     // TODO: handle overlapping particles
     int time_delta = current_time - last_update_time;
     // delta xfor pulse - speed at 16 pixels per second
-    int pos_delta = 15;//((uint32_t)time_delta * 1130*16) / 1000;
+    int pos_delta = ((uint32_t)time_delta * 1130*16) / 1000;
   
     for(int i = 0; i < MAX_PARTICLES; i++) {
       if (!particles[i].alive) continue;
