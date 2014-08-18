@@ -1,17 +1,17 @@
 #ifndef _WALKER_H_
 #define _WALKER_H_
 
-#include "NeoPixelParallel.h"
+#include "Animation.h"
 
-class Walker {
+class Walker : public Animation {
 public:
-	Walker(MultiNeoPixel& strip) : mStrip(strip) {
+	Walker(MultiNeoPixel& strip, bool active) : Animation(strip, active) {
 		mPosX = 0;
 		mPosY = 0;
 		mIsActive = false;
 		mSizeX = mStrip.getSizeX();
 		mSizeY = mStrip.getSizeY();
-		mStepsCount = 0;
+		mPrevDirection = -1;
 	}
 
 	void spawn() {
@@ -35,6 +35,16 @@ public:
 		}
 	}
 
+protected:
+	virtual void performDraw() {
+		if (getFrameCount() % 32 == 0) {
+			clear();
+			spawn();
+		}
+		step();
+	}
+
+public:
 	void step() {
 		int direction;
 		if (mPrevDirection == -1) {
@@ -95,28 +105,28 @@ public:
 		}
 
 		mPrevDirection = direction;
-		mStepsCount++;
 	}
 
-	void clear() {
+	virtual void begin() {
+	}
+
+	virtual void clear() {
 		if (mIsActive) {
 			mStrip.setPixelColor(mPosX, mPosY, 0);
 		}
 		mPosX = 0;
 		mPosY = 0;
 		mIsActive = 0;
-		mStepsCount = 0;
 	}
 
 private:
-	MultiNeoPixel& mStrip;
 	int8_t mPosX;
 	int8_t mPosY;
 	int8_t mSizeX;
 	int8_t mSizeY;
-	uint16_t mStepsCount;
 	bool mIsActive;
-	int mPrevDirection = -1;
+	int mPrevDirection;
+	uint32_t mFrameNo;
 };
 
 
