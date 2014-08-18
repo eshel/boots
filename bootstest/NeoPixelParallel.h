@@ -122,7 +122,7 @@ public:
   }
   
   inline uint16_t index(uint8_t x, uint8_t y) const {
-    return ((uint16_t)x * (uint16_t)mNumStrips) + (uint16_t)y;
+    return ((uint16_t)x * (uint16_t)mPixelsPerStrip) + (uint16_t)y;
   }
 
   inline uint16_t cyclicIndex(int8_t x, int8_t y) const {
