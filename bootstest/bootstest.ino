@@ -10,6 +10,7 @@
 #include "Wire.h"
 #include "I2Cdev.h"
 #include "MPU6050.h"
+#include "Sines.h"
 
 
 //   NEO_KHZ800  800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
@@ -25,14 +26,16 @@ static uint32_t sFrameNo = 0;
 Motion motionSensor;
 Led led(17);
 
-Disco disco(strip, true);
+Disco disco(strip, false);
 Walker walker(strip, false);
-Rain rain(strip, true);
+Rain rain(strip, false);
+Sines sines(strip, true);
 
 Animation* s_Animations[] = {
   &disco,
   &walker,
-  &rain
+  &rain,
+  &sines
 };
 
 static const int s_AnimationsCount = sizeof(s_Animations) / sizeof(Animation*);

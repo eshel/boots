@@ -17,4 +17,19 @@ uint32_t Wheel(int WheelPos) {
   }
 }
 
+uint32_t Wheel(int WheelPos, byte intensity) {
+  if(WheelPos < 256) {
+   return MultiNeoPixel::Color(WheelPos * intensity / 255, (255 - WheelPos) * intensity / 255, 0);
+  } else if(WheelPos < 512) {
+   WheelPos -= 256;
+   return MultiNeoPixel::Color((255 - WheelPos) * intensity / 255, 0, WheelPos * intensity / 255);
+  } else {
+   WheelPos -= 512;
+   return MultiNeoPixel::Color(0, WheelPos * intensity / 255, (255 - WheelPos) * intensity / 255);
+  }
+}
+
+
+
+
 #endif
