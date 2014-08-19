@@ -98,9 +98,7 @@ public:
     
   void setPinMask(uint16_t mask);
   void setPin(uint8_t p);
-    
-  void addPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b);
-  
+      
   inline uint8_t* getPixels() const {
     return mPixels;
   }
@@ -208,7 +206,24 @@ public:
     }
 #endif
     *p = b;
-  }  
+  }
+
+  inline void addPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b) {
+    uint8_t *p = &mPixels[n * 3];
+#ifdef NEO_RGB
+    if((mType & NEO_COLMASK) == NEO_GRB) {
+#endif
+      *p++ += g;
+      *p++ += r;
+#ifdef NEO_RGB
+    } else {
+      *p++ += r;
+      *p++ += g;
+    }
+#endif
+    *p += b;
+  }
+  
   
 private:
   EAddressMode mAddressMode;
