@@ -13,6 +13,18 @@
 #include "Sines.h"
 #include "Boom.h"
 
+#if defined(__AVR_ATmega32U4__)
+#define ARDUINO_IS_PRO_MICRO  1
+#else
+#define ARDUINO_IS_PRO_MICRO  0
+#endif
+
+#if (ARDUINO_IS_PRO_MICRO)
+Led led(17);
+#else
+Led led(7);
+#endif
+
 
 //   NEO_KHZ800  800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
 //   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
@@ -23,7 +35,6 @@ MultiNeoPixel strip = MultiNeoPixel(7, 16, NEO_GRB + NEO_KHZ800);
 ParticleSystem particles(strip);
 
 Motion motionSensor;
-Led led(17);
 
 Disco disco(strip, false);
 Walker walker1(strip, false);
@@ -31,7 +42,7 @@ Walker walker2(strip, false);
 Walker walker3(strip, false);
 Walker greenWalker(strip, true);
 Rain rain(strip, false);
-Sines sines(strip, false);
+Sines sines(strip, true);
 Boom boom1(strip, true);
 Boom boom2(strip, true);
 Boom boom3(strip, true);
@@ -75,6 +86,7 @@ void setup() {
   Serial.println(motionOK ? "Motion init successful" : "Motion init failed");  
 
   greenWalker.setIsWrapping(false);
+  greenWalker.setColorHead(128, 255, 255);
   greenWalker.setColorTrailHue(0);
 
   for (Animation** a = s_Animations; a != s_Animations + s_AnimationsCount; ++a) {
@@ -91,16 +103,19 @@ void setup() {
   last_update = millis();
 }
 
-void explodeOne() {
+void explodeOne(float maxRadius = 80.0f, uint32_t durationMs = 250) {
   if (!boom1.inProgress()) {
+    boom1.set(maxRadius, durationMs);
     boom1.beginExpand();
     return;
   }
   if (!boom2.inProgress()) {
+    boom2.set(maxRadius, durationMs);
     boom2.beginExpand();
     return;
   }
   if (!boom3.inProgress()) {
+    boom3.set(maxRadius, durationMs);
     boom3.beginExpand();
     return;
   }
@@ -109,18 +124,25 @@ void explodeOne() {
 void onStep() {
   //random_blips(3, 10);
   //strip.setPixelColor(random(0, strip.getSizeX()), random(0, strip.getSizeY()), 255, 255, 255);
-  explodeOne();
+  explodeOne((float)random(40, 150));
 }
 
 
 
 void doMotion() {
-  // read raw accel/gyro measurements from devic
+  // read raw accel/gyro measurements from device
+  static uint32_t lastMotionMs = 0;
+  static uint32_t thresholdMs = 150;
+  static const int16_t thresholdG = 600;
   int16_t apower = motionSensor.getAPower();
 
-  if (abs(apower-1024) > 300) {
+  if (abs(apower-1024) > thresholdG) {
     led.on();
-    onStep();
+    uint32_t ms = millis();
+    if (ms - lastMotionMs > thresholdMs) {
+      onStep();
+      lastMotionMs = ms;
+    }
   } else {
     led.off();
   }
@@ -129,12 +151,13 @@ void doMotion() {
 
 
 void loop() {
+  current_time = millis();
+
   motionSensor.sample();
-  motionSensor.print();
+  //motionSensor.print();
 
   doMotion();
 
-  current_time = millis();
   //do_particles();
 
   //strip.addAll(-25);
@@ -149,7 +172,12 @@ void loop() {
   last_update = current_time;
 
   strip.show();
-  delay(30); // important to have this!  
+
+  int16_t waitTime = 33 - (int16_t)(millis() - current_time);
+  if (waitTime < 10) {
+    waitTime = 10;  // Minimal delay - necessary!
+  }
+  delay(waitTime); // important to have this!  
 }
 
 

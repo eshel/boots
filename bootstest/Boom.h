@@ -45,6 +45,23 @@ public:
 		mCY = randomY();
 	}
 
+	void setSpeed(float speed) {
+		mSpeed = speed;
+	}
+
+	void setDuration(uint32_t durationMs) {
+		mSpeed = (mMaxRadius * 1000.0f) / (float)durationMs;
+	}
+
+	void setMaxRadius(float maxRadius) {
+		mMaxRadius = maxRadius;
+	}
+
+	void set(float maxRadius, uint32_t durationMs) {
+		setMaxRadius(maxRadius);
+		setDuration(durationMs);
+	}
+
 	void expand() {
 		mInProgress = true;
 
