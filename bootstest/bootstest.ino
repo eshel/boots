@@ -29,18 +29,25 @@ Disco disco(strip, false);
 Walker walker1(strip, false);
 Walker walker2(strip, false);
 Walker walker3(strip, false);
+Walker greenWalker(strip, true);
 Rain rain(strip, false);
-//Sines sines(strip, false);
-Boom boom(strip, true);
+Sines sines(strip, false);
+Boom boom1(strip, true);
+Boom boom2(strip, true);
+Boom boom3(strip, true);
+
 
 Animation* s_Animations[] = {
+  &sines,
   &disco,
+  &rain,  
+  &boom1,
+  &boom2,
+  &boom3,
   &walker1,
   &walker2,
   &walker3,
-  &rain,
-  //&sines,
-  &boom
+  &greenWalker
 };
 
 static const int s_AnimationsCount = sizeof(s_Animations) / sizeof(Animation*);
@@ -67,6 +74,9 @@ void setup() {
   bool motionOK = motionSensor.test();
   Serial.println(motionOK ? "Motion init successful" : "Motion init failed");  
 
+  greenWalker.setIsWrapping(false);
+  greenWalker.setColorTrailHue(0);
+
   for (Animation** a = s_Animations; a != s_Animations + s_AnimationsCount; ++a) {
     (*a)->begin();
   }
@@ -81,10 +91,25 @@ void setup() {
   last_update = millis();
 }
 
+void explodeOne() {
+  if (!boom1.inProgress()) {
+    boom1.beginExpand();
+    return;
+  }
+  if (!boom2.inProgress()) {
+    boom2.beginExpand();
+    return;
+  }
+  if (!boom3.inProgress()) {
+    boom3.beginExpand();
+    return;
+  }
+}
 
 void onStep() {
   //random_blips(3, 10);
   //strip.setPixelColor(random(0, strip.getSizeX()), random(0, strip.getSizeY()), 255, 255, 255);
+  explodeOne();
 }
 
 

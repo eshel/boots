@@ -7,27 +7,27 @@
 class Walker : public Animation {
 public:
 	Walker(MultiNeoPixel& strip, bool active) : Animation(strip, active) {
-		mWrap = true;
+		mWrapY = true;
 		mPosX = 0;
 		mPosY = 0;
 		mIsActive = false;
 		mSizeX = (int8_t)mStrip.getSizeX();
 		mSizeY = (int8_t)mStrip.getSizeY();
 		mPrevDX = mPrevDY = 0;
-		mMaxJumpX = 2;
-		mCycleTrailColor = true;
+		mMaxJumpX = 1;
 
 		mColorHead = MultiNeoPixel::Color(255, 255, 255);
-		mColorTrailHue = 0;
+		setColorTrailRandom();		
 	}
 
 	void setColorTrailRandom() {
+		mCycleTrailColor = true;
 		mColorTrailHue = random(0, 678);
 	}
 
 
 	void setIsWrapping(bool isWrapping) {
-		mWrap = isWrapping;
+		mWrapY = isWrapping;
 	}
 
 	void spawn() {
@@ -48,6 +48,7 @@ public:
 
 	void setColorTrailHue(uint16_t hue) {
 		mColorTrailHue = hue;
+		mCycleTrailColor = false;
 	}
 
 protected:
@@ -56,9 +57,7 @@ protected:
 		int8_t py = mPosY;
 
 		if (mCycleTrailColor) {
-			//if (getFrameCount() % 2 == 0) {
-				mColorTrailHue++;
-			//}
+			mColorTrailHue++;
 		}
 
 		step();
@@ -80,24 +79,16 @@ public:
 	}
 
 	inline void fixX() {
-		if (mWrap) {
-			while (mPosX < 0) {
-				mPosX += mSizeX;
-			}
-			while (mPosX >= mSizeX) {
-				mPosX -= mSizeX;
-			}
-		} else {
-			if (mPosX < 0) {
-				mPosX = 0;
-			} else if (mPosX >= mSizeX) {
-				mPosX = mSizeX - 1;
-			}
+		while (mPosX < 0) {
+			mPosX += mSizeX;
+		}
+		while (mPosX >= mSizeX) {
+			mPosX -= mSizeX;
 		}
 	}
 
 	inline void fixY() {
-		if (mWrap) {
+		if (mWrapY) {
 			while (mPosY < 0) {
 				mPosY += mSizeY;
 			}
@@ -169,7 +160,6 @@ public:
 	}
 
 	virtual void begin() {
-		setColorTrailRandom();
 		spawn();
 	}
 
@@ -194,7 +184,7 @@ private:
 	bool mIsActive;
 	int8_t mPrevDX, mPrevDY;
 	uint32_t mFrameNo;
-	bool mWrap;
+	bool mWrapY;
 	bool mCycleTrailColor;
 
 	uint32_t mColorHead;

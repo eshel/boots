@@ -38,7 +38,7 @@ public:
 
 protected:
 	virtual void performDraw() {
-		addRandomBlips(-20, 3);
+		addRandomBlips(-15, 5);
 	}
 
 
