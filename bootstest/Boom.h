@@ -85,7 +85,7 @@ public:
 	}
 
 	int8_t randomX() {
-		return random(1, mStrip.getSizeX()-1);
+		return random(0, mStrip.getSizeX());
 	}
 
 	int8_t randomY() {
