@@ -45,6 +45,10 @@ typedef enum {
   _ADDRESS_NUM
 } EAddressMode;
 
+
+#define SPACE_Y_MM    16
+#define SPACE_X_MM    60
+
 class MultiNeoPixel {
 
 public:
@@ -327,6 +331,24 @@ public:
   static const uint32_t GREEN;
   static const uint32_t BLUE;
   
+  int8_t clampX(int8_t x) const {
+    if (x < 0) {
+      x = 0;
+    } else if (x >= (int8_t)getSizeX()) {
+      x = (int8_t)(getSizeX() - 1);
+    }
+    return x;
+  }
+
+  int8_t clampY(int8_t y) const {
+    if (y < 0) {
+      y = 0;
+    } else if (y >= (int8_t)getSizeY()) {
+      y = (int8_t)(getSizeY() - 1);
+    }
+    return y;
+  }
+
 };
 
 
