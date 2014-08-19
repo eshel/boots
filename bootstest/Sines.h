@@ -27,15 +27,15 @@ protected:
 
 public:
 	void sinRainbow() {
-		uint32_t frame = getFrameCount();
+		float t = getTime() / 300000.f;
 		for(uint16_t x=0; x < mSizeX; x++) {
 			for(uint16_t y=0; y < mSizeY; y++) {
-				int val = 64*(sin(x*11 + frame/15.f) + sin(y*7 + frame/13.f));
+				int val = 64*(sin(x*11 + t/15.f) + sin(y*7 + t/13.f));
 				if (val < 0) val = 0;
-				int val2 = 384 + 192*(sin(x*7 - frame/13.f) + sin(y*11 + frame/15.f));
+				int val2 = 384 + 192*(sin(x*7 - t/13.f) + sin(y*11 + t/15.f));
 				if (val2 < 0) val2 = 0;
-				int val3 = 64*(sin(x*11 + frame/27.f) + sin(y*11 - frame/17.f));
-				if (val3 < 0) val3 = 0;
+				//int val3 = 64*(sin(x*11 + t/27.f) + sin(y*11 - t/17.f));
+				//if (val3 < 0) val3 = 0;
 				mStrip.setPixelColor(x,y, Wheel(val2, max(val-15, 0)));
 			}
 		}

@@ -40,7 +40,7 @@ Disco disco(strip, false);
 Walker walker1(strip, false);
 Walker walker2(strip, false);
 Walker walker3(strip, false);
-Walker greenWalker(strip, true);
+Walker greenWalker(strip, false);
 Rain rain(strip, false);
 Sines sines(strip, true);
 Boom boom1(strip, true);
