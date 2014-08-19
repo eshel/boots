@@ -12,6 +12,7 @@
 #include "MPU6050.h"
 #include "Sines.h"
 #include "Boom.h"
+#include "ModeIndicator.h"
 
 #if defined(__AVR_ATmega32U4__)
 #define ARDUINO_IS_PRO_MICRO  1
@@ -47,6 +48,9 @@ Boom boom1(strip, true);
 Boom boom2(strip, true);
 Boom boom3(strip, true);
 
+volatile uint8_t mode = 0;
+
+ModeIndicator modeA(strip, &mode, true);
 
 Animation* s_Animations[] = {
   &sines,
@@ -92,6 +96,8 @@ void setup() {
   for (Animation** a = s_Animations; a != s_Animations + s_AnimationsCount; ++a) {
     (*a)->begin();
   }
+
+  modeA.begin();
 
   strip.setModeAny();
   strip.clearAll();
@@ -149,10 +155,10 @@ void doMotion() {
 
 }
 
+static uint32_t frame = 0;
 
 void loop() {
   current_time = millis();
-
   motionSensor.sample();
   //motionSensor.print();
 
@@ -163,10 +169,18 @@ void loop() {
   //strip.addAll(-25);
   strip.multAll(4, 5);
 
-  for (Animation** a = s_Animations; a != s_Animations + s_AnimationsCount; ++a) {
-    if ((*a)->isActive()) {
-      (*a)->draw();
+  if (modeA.shouldDraw()) {
+    modeA.draw();
+  } else {
+    for (Animation** a = s_Animations; a != s_Animations + s_AnimationsCount; ++a) {
+      if ((*a)->isActive()) {
+        (*a)->draw();
+      }
     }
+  }
+
+  if (frame % 100 == 0) {
+    mode = (mode+1) % 16;
   }
 
   last_update = current_time;
@@ -178,6 +192,8 @@ void loop() {
     waitTime = 10;  // Minimal delay - necessary!
   }
   delay(waitTime); // important to have this!  
+
+  frame++;
 }
 
 
