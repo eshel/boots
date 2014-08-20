@@ -43,9 +43,9 @@ protected:
 	MultiNeoPixel& mStrip;
 	uint32_t mFrameCount;
 	unsigned long mTime;
+	bool mIsActive;
 
 private:
-	bool mIsActive;
 };
 
 #endif // #ifndef _ANIMATON_H_

@@ -11,20 +11,6 @@
 #include "I2Cdev.h"
 #include "MPU6050.h"
 #include "Sines.h"
-#include "Boom.h"
-#include "ModeIndicator.h"
-
-#if defined(__AVR_ATmega32U4__)
-#define ARDUINO_IS_PRO_MICRO  1
-#else
-#define ARDUINO_IS_PRO_MICRO  0
-#endif
-
-#if (ARDUINO_IS_PRO_MICRO)
-Led led(17);
-#else
-Led led(7);
-#endif
 
 
 //   NEO_KHZ800  800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
@@ -33,37 +19,25 @@ Led led(7);
 //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
 MultiNeoPixel strip = MultiNeoPixel(7, 16, NEO_GRB + NEO_KHZ800);
 
+ParticleSystem particles(strip);
 
 Motion motionSensor;
+Led led(17);
 
 Disco disco(strip, false);
-Walker walker1(strip, false);
-Walker walker2(strip, false);
-Walker walker3(strip, false);
-Walker greenWalker(strip, false);
+Walker walker1(strip, true);
+Walker walker2(strip, true);
+Walker walker3(strip, true);
 Rain rain(strip, false);
 Sines sines(strip, true);
-ParticleSystem particles(strip, false);
-Boom boom1(strip, true);
-Boom boom2(strip, true);
-Boom boom3(strip, true);
-
-volatile uint8_t mode = 0;
-
-ModeIndicator modeA(strip, &mode, true);
 
 Animation* s_Animations[] = {
-  &sines,
   &disco,
-  &rain,  
-  &boom1,
-  &boom2,
-  &boom3,
   &walker1,
   &walker2,
   &walker3,
-  &greenWalker,
-  &particles
+  &rain,
+  &sines
 };
 
 static const int s_AnimationsCount = sizeof(s_Animations) / sizeof(Animation*);
@@ -90,114 +64,80 @@ void setup() {
   bool motionOK = motionSensor.test();
   Serial.println(motionOK ? "Motion init successful" : "Motion init failed");  
 
-  greenWalker.setIsWrapping(false);
-  greenWalker.setColorHead(128, 255, 255);
-  greenWalker.setColorTrailHue(0);
+<<<<<<< HEAD
+=======
+  //walker1.setColorTrail(255, 0, 0);
+  //walker2.setColorTrail(0, 255, 0);
+  //walker3.setColorTrail(0, 0, 255);
 
+>>>>>>> sines2
   for (Animation** a = s_Animations; a != s_Animations + s_AnimationsCount; ++a) {
     (*a)->begin();
   }
 
-  modeA.begin();
-
-  strip.setModeAny();
-  strip.clearAll();
   strip.begin();
   strip.show(); // Initialize all pixels to 'off'
+  strip.setModeAny();
 
   delay(3000);
   
   last_update = millis();
 }
 
-void explodeOne(float maxRadius = 80.0f, uint32_t durationMs = 250) {
-  if (!boom1.inProgress()) {
-    boom1.set(maxRadius, durationMs);
-    boom1.beginExpand();
-    return;
-  }
-  if (!boom2.inProgress()) {
-    boom2.set(maxRadius, durationMs);
-    boom2.beginExpand();
-    return;
-  }
-  if (!boom3.inProgress()) {
-    boom3.set(maxRadius, durationMs);
-    boom3.beginExpand();
-    return;
-  }
-}
 
 void onStep() {
   //random_blips(3, 10);
   //strip.setPixelColor(random(0, strip.getSizeX()), random(0, strip.getSizeY()), 255, 255, 255);
-  explodeOne((float)random(40, 150));
 }
 
 
 
 void doMotion() {
-  // read raw accel/gyro measurements from device
-  static uint32_t lastMotionMs = 0;
-  static uint32_t thresholdMs = 150;
-  static const int16_t thresholdG = 600;
+  // read raw accel/gyro measurements from devic
   int16_t apower = motionSensor.getAPower();
 
-  if (abs(apower-1024) > thresholdG) {
+  if (abs(apower-1024) > 300) {
     led.on();
-    uint32_t ms = millis();
-    if (ms - lastMotionMs > thresholdMs) {
-      onStep();
-      lastMotionMs = ms;
-    }
+    onStep();
   } else {
     led.off();
   }
 
 }
 
-static uint32_t frame = 0;
 
 void loop() {
-  current_time = millis();
   motionSensor.sample();
-  //motionSensor.print();
+  motionSensor.print();
 
   doMotion();
 
+  current_time = millis();
+  //do_particles();
 
   //strip.addAll(-25);
   strip.multAll(4, 5);
 
-  if (modeA.shouldDraw()) {
-    modeA.draw();
-  } else {
-    for (Animation** a = s_Animations; a != s_Animations + s_AnimationsCount; ++a) {
-      if ((*a)->isActive()) {
-        (*a)->draw();
-      }
+  for (Animation** a = s_Animations; a != s_Animations + s_AnimationsCount; ++a) {
+    if ((*a)->isActive()) {
+      (*a)->draw();
     }
-  }
-
-  if (frame % 100 == 0) {
-    mode = (mode+1) % 16;
   }
 
   last_update = current_time;
 
   strip.show();
-
-  int16_t waitTime = 33 - (int16_t)(millis() - current_time);
-  if (waitTime < 10) {
-    waitTime = 10;  // Minimal delay - necessary!
-  }
-  delay(waitTime); // important to have this!  
-
-  frame++;
+  delay(30); // important to have this!  
 }
 
 
 #define INC_MOD(x, lim) (x)++; if ((x) >= (lim)) x=0;
+
+void do_particles() {
+  strip.clearAll();
+  particles.runFrame(current_time);
+  strip.show();
+}
 
 /*
 void rainbow(uint8_t wait) {
