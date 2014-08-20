@@ -19,17 +19,17 @@
 //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
 MultiNeoPixel strip = MultiNeoPixel(7, 16, NEO_GRB + NEO_KHZ800);
 
+ParticleSystem particles(strip);
 
 Motion motionSensor;
 Led led(17);
 
 Disco disco(strip, false);
-Walker walker1(strip, false);
-Walker walker2(strip, false);
-Walker walker3(strip, false);
+Walker walker1(strip, true);
+Walker walker2(strip, true);
+Walker walker3(strip, true);
 Rain rain(strip, false);
 Sines sines(strip, true);
-ParticleSystem particles(strip, false);
 
 Animation* s_Animations[] = {
   &disco,
@@ -37,8 +37,7 @@ Animation* s_Animations[] = {
   &walker2,
   &walker3,
   &rain,
-  &sines,
-  &particles
+  &sines
 };
 
 static const int s_AnimationsCount = sizeof(s_Animations) / sizeof(Animation*);
@@ -65,6 +64,13 @@ void setup() {
   bool motionOK = motionSensor.test();
   Serial.println(motionOK ? "Motion init successful" : "Motion init failed");  
 
+<<<<<<< HEAD
+=======
+  //walker1.setColorTrail(255, 0, 0);
+  //walker2.setColorTrail(0, 255, 0);
+  //walker3.setColorTrail(0, 0, 255);
+
+>>>>>>> sines2
   for (Animation** a = s_Animations; a != s_Animations + s_AnimationsCount; ++a) {
     (*a)->begin();
   }

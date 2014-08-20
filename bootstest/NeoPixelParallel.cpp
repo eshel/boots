@@ -955,13 +955,3 @@ void MultiNeoPixel::setPin(uint8_t p) {
 }
 
 
-void MultiNeoPixel::addPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b) {
-  if (n >= mPixelsPerStrip) {
-    return;
-  }
-  uint32_t color = getPixelColor(n);
-  setPixelColor(n, (r + (color & 0xff) < 256) ? ((r + color & 0xff)) : 255,
-    ((g + ((color >> 8) & 0xff)) < 256) ? (g + ((color >> 8) & 0xff)) : 255,
-    ((b + (color >> 16)) < 256) ? (b + (color >> 16)) : 255);
-}
-

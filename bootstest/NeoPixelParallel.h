@@ -208,6 +208,11 @@ public:
     *p = b;
   }
 
+  inline void addPixelColor(uint8_t x, uint8_t y, uint8_t r, uint8_t g, uint8_t b) {
+    addPixelColor(index(x, y), r, g, b);
+  }
+
+
   inline void addPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b) {
     uint8_t *p = &mPixels[n * 3];
 #ifdef NEO_RGB
@@ -223,6 +228,7 @@ public:
 #endif
     *p += b;
   }
+
   
   
 private:
