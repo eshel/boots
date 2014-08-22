@@ -13,6 +13,7 @@
 #include "Sines.h"
 #include "Boom.h"
 #include "ModeIndicator.h"
+#include "Button.h"
 
 #if defined(__AVR_ATmega32U4__)
 #define ARDUINO_IS_PRO_MICRO  1
@@ -22,8 +23,12 @@
 
 #if (ARDUINO_IS_PRO_MICRO)
 Led led(17);
+#define PIN_BUTTON_A  14
+#define PIN_BUTTON_B  15
 #else
 Led led(7);
+#define PIN_BUTTON_A  14
+#define PIN_BUTTON_B  15
 #endif
 
 
@@ -36,13 +41,16 @@ MultiNeoPixel strip = MultiNeoPixel(7, 16, NEO_GRB + NEO_KHZ800);
 
 Motion motionSensor;
 
+Button buttonA(PIN_BUTTON_A);
+Button buttonB(PIN_BUTTON_B);
+
 Disco disco(strip, false);
 Walker walker1(strip, false);
 Walker walker2(strip, false);
 Walker walker3(strip, false);
 Walker greenWalker(strip, false);
-Rain rain(strip, false);
-Sines sines(strip, true);
+Rain rain(strip, true);
+Sines sines(strip, false);
 ParticleSystem particles(strip, false);
 Boom boom1(strip, true);
 Boom boom2(strip, true);
@@ -85,6 +93,9 @@ void setup() {
   Serial.begin(38400);
   Wire.begin();
   led.begin();
+  
+  buttonA.begin();
+  buttonB.begin();
 
   motionSensor.begin();
   bool motionOK = motionSensor.test();
@@ -160,6 +171,18 @@ static uint32_t frame = 0;
 
 void loop() {
   current_time = millis();
+
+  buttonA.read();
+  buttonB.read();
+
+  if (buttonA.shouldHandleOn()) {
+    mode = (mode + 1) % 4;
+  }
+
+  if (buttonB.shouldHandleOn()) {
+    explodeOne();
+  }
+
   motionSensor.sample();
   //motionSensor.print();
 
@@ -177,10 +200,6 @@ void loop() {
         (*a)->draw();
       }
     }
-  }
-
-  if (frame % 100 == 0) {
-    mode = (mode+1) % 16;
   }
 
   last_update = current_time;
