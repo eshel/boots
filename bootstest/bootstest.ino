@@ -11,7 +11,7 @@
 #include "I2Cdev.h"
 #include "MPU6050.h"
 #include "Sines.h"
-#include "Boom.h"
+#include "MultiBoom.h"
 #include "ModeIndicator.h"
 #include "Button.h"
 
@@ -52,9 +52,7 @@ Walker greenWalker(strip, false);
 Rain rain(strip, true);
 Sines sines(strip, false);
 ParticleSystem particles(strip, false);
-Boom boom1(strip, true);
-Boom boom2(strip, true);
-Boom boom3(strip, true);
+MultiBoom boom(strip, true);
 
 volatile uint8_t modeValA = 0;
 volatile uint8_t modeValB = 0;
@@ -83,14 +81,20 @@ Animation* s_Animations[] = {
   &sines,
   &disco,
   &rain,  
-  &boom1,
-  &boom2,
-  &boom3,
+  &boom,
   &walker1,
   &walker2,
   &walker3,
   &greenWalker,
   &particles
+};
+
+Animation* s_IdleAnimations[] = {
+  &greenWalker
+};
+
+Animation* s_MotionAnimations[] = {
+  &boom
 };
 
 static const int s_AnimationsCount = sizeof(s_Animations) / sizeof(Animation*);
@@ -141,31 +145,11 @@ void setup() {
   last_update = millis();
 }
 
-void explodeOne(float maxRadius = 80.0f, uint32_t durationMs = 250) {
-  if (!boom1.inProgress()) {
-    boom1.set(maxRadius, durationMs);
-    boom1.beginExpand();
-    return;
-  }
-  if (!boom2.inProgress()) {
-    boom2.set(maxRadius, durationMs);
-    boom2.beginExpand();
-    return;
-  }
-  if (!boom3.inProgress()) {
-    boom3.set(maxRadius, durationMs);
-    boom3.beginExpand();
-    return;
-  }
-}
-
 void onStep() {
   //random_blips(3, 10);
   //strip.setPixelColor(random(0, strip.getSizeX()), random(0, strip.getSizeY()), 255, 255, 255);
-  explodeOne((float)random(40, 150));
+  boom.explodeOne((float)random(40, 150));
 }
-
-
 
 void doMotion() {
   // read raw accel/gyro measurements from device
