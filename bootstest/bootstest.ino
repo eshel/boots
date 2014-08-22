@@ -54,29 +54,6 @@ Sines sines(strip, false);
 ParticleSystem particles(strip, false);
 MultiBoom boom(strip, true);
 
-volatile uint8_t modeValA = 0;
-volatile uint8_t modeValB = 0;
-
-#define MODES_NUM_A   8
-#define MODES_NUM_B   2
-
-#define MODE_A_FIRST  0
-#define MODE_A_LAST   (MODE_A_FIRST + MODES_NUM_A - 1)
-
-#define MODE_B_FIRST  14
-#define MODE_B_LAST   (MODE_B_FIRST + MODES_NUM_B - 1)
-
-ModeIndicator modeA(strip, &modeValA, true, MODE_A_FIRST, MODE_A_LAST);
-ModeIndicator modeB(strip, &modeValB, true, MODE_B_FIRST, MODE_B_LAST);
-
-static void cycleModeA() {
-  modeValA = (modeValA + 1) % MODES_NUM_A;
-}
-
-static void cycleModeB() {
-  modeValB = (modeValB + 1) % MODES_NUM_B;
-}
-
 Animation* s_Animations[] = {
   &sines,
   &disco,
@@ -89,15 +66,66 @@ Animation* s_Animations[] = {
   &particles
 };
 
+
+static const int s_AnimationsCount = sizeof(s_Animations) / sizeof(Animation*);
+
 Animation* s_IdleAnimations[] = {
-  &greenWalker
+  &rain,
+  &disco,
+  &greenWalker,
+  &sines,
+  &particles
 };
+#define IDLE_COUNT (sizeof(s_IdleAnimations) / sizeof(Animation*))
 
 Animation* s_MotionAnimations[] = {
   &boom
 };
+#define MOTION_COUNT (sizeof(s_MotionAnimations) / sizeof(Animation*))
 
-static const int s_AnimationsCount = sizeof(s_Animations) / sizeof(Animation*);
+
+volatile uint8_t modeValA = 0;
+volatile uint8_t modeValB = 0;
+
+#define MODES_NUM_A   IDLE_COUNT
+#define MODES_NUM_B   (MOTION_COUNT + 1)
+
+#define MODE_A_FIRST  0
+#define MODE_A_LAST   (MODE_A_FIRST + MODES_NUM_A - 1)
+
+#define MODE_B_FIRST  14
+#define MODE_B_LAST   (MODE_B_FIRST + MODES_NUM_B - 1)
+
+ModeIndicator modeA(strip, &modeValA, true, MODE_A_FIRST, MODE_A_LAST);
+ModeIndicator modeB(strip, &modeValB, true, MODE_B_FIRST, MODE_B_LAST);
+
+static void cycleModeA() {
+  modeValA = (modeValA + 1) % MODES_NUM_A;
+  setModeA(modeValA);
+}
+
+static void cycleModeB() {
+  modeValB = (modeValB + 1) % MODES_NUM_B;
+  setModeB(modeValB);
+}
+
+
+static void setModeA(uint8_t modeA) {
+  for (Animation** a = s_IdleAnimations; a != s_IdleAnimations + IDLE_COUNT; ++a) {
+    (*a)->setActive(false);
+  }
+  s_IdleAnimations[modeA]->setActive(true);
+}
+
+static void setModeB(uint8_t modeB) {
+  for (Animation** a = s_MotionAnimations; a != s_MotionAnimations + MOTION_COUNT; ++a) {
+    (*a)->setActive(false);
+  }
+  if (modeB < MODES_NUM_B) {
+    s_MotionAnimations[modeB]->setActive(true);  
+  }
+}
+
 
 
 // IMPORTANT: To reduce NeoPixel burnout risk, add 1000 uF capacitor across
