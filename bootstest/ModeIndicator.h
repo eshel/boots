@@ -6,11 +6,17 @@
 
 class ModeIndicator : public Animation {
 public:
-	ModeIndicator(MultiNeoPixel& strip, volatile uint8_t* mode, bool active) : Animation(strip, active), mMode(mode) {
+	ModeIndicator(MultiNeoPixel& strip, volatile uint8_t* mode, bool active, uint8_t firstRow, uint8_t lastRow) : Animation(strip, active), mMode(mode) {
+		mFirstRow = firstRow;
+		mLastRow = lastRow;
+
+		uint8_t rowsNum = mLastRow - mFirstRow + 1;
+
 		mLastMode = *mMode;
 		mLastChange = 0;
 		mHueInterval = 128;
 		mTimeout = 1000;
+		mLuminosity = 255;
 	}
 
 	void clear() {
@@ -19,6 +25,10 @@ public:
 
 	void begin() {
 
+	}
+
+	void forceChange() {
+		mLastChange = millis();
 	}
 
 	void checkMode() {
@@ -39,17 +49,17 @@ public:
 	}
 
 	uint8_t getFirstRow() {
-		return 0;
+		return mFirstRow;
 	}
 
 	uint8_t getLastRow() {
-		return mStrip.getSizeY();
+		return mLastRow;
 	}
 
 	virtual void performDraw() {
 		if (shouldDraw()) {
 			uint8_t mode = mLastMode;
-			uint32_t color = Wheel(((uint32_t)mode * (uint32_t)mHueInterval) % 768, 64);
+			uint32_t color = Wheel(((uint32_t)mode * (uint32_t)mHueInterval) % 768, mLuminosity);
 			uint8_t visibleRow = getFirstRow() + mode % (getLastRow() - getFirstRow() + 1);
 			for (uint8_t y = getFirstRow(); y <= getLastRow(); ++y) {
 				if (y == visibleRow) {
@@ -71,6 +81,9 @@ protected:
 	uint32_t mTimeout;
 	uint32_t mLastChange;
 	uint16_t mHueInterval;
+	uint8_t mFirstRow;
+	uint8_t mLastRow;
+	uint8_t mLuminosity;
 };
 
 #endif // #ifndef _MODE_INDICATOR_H_

@@ -56,9 +56,28 @@ Boom boom1(strip, true);
 Boom boom2(strip, true);
 Boom boom3(strip, true);
 
-volatile uint8_t mode = 0;
+volatile uint8_t modeValA = 0;
+volatile uint8_t modeValB = 0;
 
-ModeIndicator modeA(strip, &mode, true);
+#define MODES_NUM_A   8
+#define MODES_NUM_B   2
+
+#define MODE_A_FIRST  0
+#define MODE_A_LAST   (MODE_A_FIRST + MODES_NUM_A - 1)
+
+#define MODE_B_FIRST  14
+#define MODE_B_LAST   (MODE_B_FIRST + MODES_NUM_B - 1)
+
+ModeIndicator modeA(strip, &modeValA, true, MODE_A_FIRST, MODE_A_LAST);
+ModeIndicator modeB(strip, &modeValB, true, MODE_B_FIRST, MODE_B_LAST);
+
+static void cycleModeA() {
+  modeValA = (modeValA + 1) % MODES_NUM_A;
+}
+
+static void cycleModeB() {
+  modeValB = (modeValB + 1) % MODES_NUM_B;
+}
 
 Animation* s_Animations[] = {
   &sines,
@@ -93,7 +112,7 @@ void setup() {
   Serial.begin(38400);
   Wire.begin();
   led.begin();
-  
+
   buttonA.begin();
   buttonB.begin();
 
@@ -110,6 +129,7 @@ void setup() {
   }
 
   modeA.begin();
+  modeB.begin();
 
   strip.setModeAny();
   strip.clearAll();
@@ -176,11 +196,13 @@ void loop() {
   buttonB.read();
 
   if (buttonA.shouldHandleOn()) {
-    mode = (mode + 1) % 4;
+    cycleModeA();
+    modeB.forceChange();
   }
 
   if (buttonB.shouldHandleOn()) {
-    explodeOne();
+    cycleModeB();
+    modeA.forceChange();
   }
 
   motionSensor.sample();
@@ -192,9 +214,15 @@ void loop() {
   //strip.addAll(-25);
   strip.multAll(4, 5);
 
-  if (modeA.shouldDraw()) {
+  bool isModeIndication = false;
+
+  if ((modeA.shouldDraw()) || (modeB.shouldDraw())) {
+    isModeIndication = true;
     modeA.draw();
-  } else {
+    modeB.draw();
+  }
+
+  if (!isModeIndication) {
     for (Animation** a = s_Animations; a != s_Animations + s_AnimationsCount; ++a) {
       if ((*a)->isActive()) {
         (*a)->draw();
