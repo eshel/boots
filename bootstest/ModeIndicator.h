@@ -14,7 +14,11 @@ public:
 
 		mLastMode = *mMode;
 		mLastChange = 0;
-		mHueInterval = 128;
+		if (rowsNum == 0) {
+			mHueInterval = 256;
+		} else {
+			mHueInterval = 768 / (uint16_t)rowsNum;
+		}
 		mTimeout = 1000;
 		mLuminosity = 255;
 	}
