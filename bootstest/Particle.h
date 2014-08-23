@@ -9,41 +9,34 @@
 #define MAX_PARTICLES 5
 #define NUM_COLUMNS 7
 #define NUM_ROWS 16
-#define SPAWN_TIME 1311
+#define SPAWN_TIME 311
 
-// units are pixels per 1000 milliseconds 
-#define PARTICLE_SPEED (930*16)
-// units are trailers per 1000 milliseconds (note: correct model is poisson distribution, you won't find it here)
-#define TRAILER_RATE 4
+// units are 256ths of pixels per 1000/1024 milliseconds 
+#define PARTICLE_SPEED (16*256)
 
 class ParticleSystem : public Animation {
 public:
-  ParticleSystem(MultiNeoPixel& ledStrip, bool active) : Animation(ledStrip, active),
-    next_spawn_index(0)
+  ParticleSystem(MultiNeoPixel& ledStrip, bool active) : Animation(ledStrip, active)
   {
   }
   
-  void runFrame() {
-    unsigned long current_time = getTime();
+protected:  
+    virtual void performDraw() {
+    unsigned long current_time = getTime() >> 10;
     if (current_time - last_spawn_time > SPAWN_TIME) {
-      spawnParticle(current_time, next_spawn_index);
-      next_spawn_index = (next_spawn_index + 1) % NUM_COLUMNS;
+      spawnParticle(current_time, nextSpawnColumn);
+      nextSpawnColumn = (nextSpawnColumn+ 1) % NUM_COLUMNS;
     }
     int time_delta = current_time - last_update_time;
     for(uint8_t col = 0; col < NUM_COLUMNS; col++) {
       runColumn(col, time_delta);
     }
     last_update_time = current_time;
-  }
-
-  
-protected:  
-    virtual void performDraw() {
-      runFrame();
     }
 
     virtual void begin() {
-      last_update_time = last_spawn_time = getTime();
+      nextSpawnColumn = 0;
+      last_update_time = last_spawn_time = getTime()>>10;
       for(uint8_t col = 0; col < NUM_COLUMNS; col++) {
         columns[col].begin();
       }
@@ -60,29 +53,23 @@ protected:
       // TODO: handle overlapping particles
       // delta xfor pulse - speed at 16 pixels per second
       int pos_delta = ((uint32_t)time_delta * PARTICLE_SPEED) / 1000;
-    
+
       for(int i = 0; i < MAX_PARTICLES; i++) {
         Column::Particle &particle = columns[col].particles[i];
         if (!particle.alive) continue;
+        //Serial.print("delta: "); Serial.println(pos_delta);
         
-        //Serial.print(i); Serial.print(") pos = "); Serial.print(particles[i].pos); Serial.print(" r = "); Serial.print(particles[i].r);
+        //Serial.print(i); Serial.print(") pos = "); Serial.print(particle.pos); Serial.print(" r = "); Serial.print(particle.r);
         // draw pulse
         drawParticle(particle, i);
         
-        // see if we want to spawn a trailer
-        int minX = ((particle.pos - particle.radius) >> 8) - 1;
-        if (minX >= 0 && minX <= (NUM_ROWS - 1)) {
-          if (random(0, 1000) < time_delta * TRAILER_RATE) {
-            mStrip.setPixelColor(col, (NUM_ROWS-1) - minX, particle.r, particle.g, particle.b);
-          }
-        }
         //Serial.print(" pix=");
         //Serial.println();
         // move pulse - speed at 16 pixels per 257/1000th of a second
         particle.pos += pos_delta;
         if (particle.pos  >= (256*16 + 2*particle.radius)) {
-          Serial.print("killin' particle: "); Serial.println(particle.pos);
           particle.alive = false;
+          //Serial.print("Killin' part: "); Serial.println(particle.pos);
         }
       }
 
@@ -111,14 +98,19 @@ protected:
     inline void begin() {
        for(int i = 0; i < MAX_PARTICLES; i++) {
         particles[i].alive = false;
-      }     
+      }
+      nextSpawnIndex = 0;
     }
 
     inline void clear() {
       begin();
     }
 
-    //Particle &spawnParticle();
+    Particle &nextParticle() {
+      return particles[nextSpawnIndex];
+    }
+
+    uint8_t nextSpawnIndex;
 
 
   } columns[NUM_COLUMNS];
@@ -137,21 +129,20 @@ protected:
   }
 
   void spawnParticle(const unsigned long current_time, unsigned int col) {
-    Column::Particle &particle = columns[col].particles[next_spawn_index];
+    //Serial.print("spawning part: "); Serial.println(col);
+    Column::Particle &particle = columns[col].nextParticle();
     last_spawn_time = current_time;
-    particle.alive=true;
+    particle.alive = true;
     particle.radius = 31*16;
     particle.pos = -particle.radius;
-
     particle.color = Wheel((current_time >> 5) % 768);
-    next_spawn_index = (next_spawn_index + 1) % MAX_PARTICLES;
   }
 
 
   // particle spawning state
   unsigned long last_spawn_time;
   unsigned long last_update_time;
-  uint8_t next_spawn_index;
+  uint8_t nextSpawnColumn;
 
 
 };
