@@ -14,6 +14,7 @@
 #include "MultiBoom.h"
 #include "ModeIndicator.h"
 #include "Button.h"
+#include "Meter.h"
 
 #if defined(__AVR_ATmega32U4__)
 #define ARDUINO_IS_PRO_MICRO  1
@@ -39,7 +40,10 @@ Led led(7);
 MultiNeoPixel strip = MultiNeoPixel(7, 16, NEO_GRB + NEO_KHZ800);
 
 
+static const uint32_t thresholdMs = 150;
+static const int16_t thresholdG = 800;
 Motion motionSensor;
+
 
 Button buttonA(PIN_BUTTON_A);
 Button buttonB(PIN_BUTTON_B);
@@ -53,6 +57,7 @@ Rain rain(strip, true);
 Sines sines(strip, false);
 ParticleSystem particles(strip, false);
 MultiBoom boom(strip, true);
+Meter accelMeter(strip, true);
 
 Animation* s_Animations[] = {
   &sines,
@@ -63,7 +68,8 @@ Animation* s_Animations[] = {
   &walker2,
   &walker3,
   &greenWalker,
-  &particles
+  &particles,
+  &accelMeter
 };
 
 
@@ -79,7 +85,8 @@ Animation* s_IdleAnimations[] = {
 #define IDLE_COUNT (sizeof(s_IdleAnimations) / sizeof(Animation*))
 
 Animation* s_MotionAnimations[] = {
-  &boom
+  &boom,
+  &accelMeter
 };
 #define MOTION_COUNT (sizeof(s_MotionAnimations) / sizeof(Animation*))
 
@@ -87,13 +94,15 @@ Animation* s_MotionAnimations[] = {
 volatile uint8_t modeValA = 0;
 volatile uint8_t modeValB = 0;
 
+#define ROWS_NUM      16
+
 #define MODES_NUM_A   IDLE_COUNT
 #define MODES_NUM_B   (MOTION_COUNT + 1)
 
 #define MODE_A_FIRST  0
 #define MODE_A_LAST   (MODE_A_FIRST + MODES_NUM_A - 1)
 
-#define MODE_B_FIRST  14
+#define MODE_B_FIRST  (ROWS_NUM - MODES_NUM_B - 1)
 #define MODE_B_LAST   (MODE_B_FIRST + MODES_NUM_B - 1)
 
 ModeIndicator modeA(strip, &modeValA, true, MODE_A_FIRST, MODE_A_LAST);
@@ -141,6 +150,9 @@ void setup() {
   //Serial.begin(9600);
   randomSeed(analogRead(8));
 
+  setModeA(0);
+  setModeB(0);
+
   Serial.begin(38400);
   Wire.begin();
   led.begin();
@@ -175,16 +187,17 @@ void setup() {
 
 void onStep() {
   //random_blips(3, 10);
-  //strip.setPixelColor(random(0, strip.getSizeX()), random(0, strip.getSizeY()), 255, 255, 255);
-  boom.explodeOne((float)random(40, 150));
+  if (boom.isActive()) {
+    boom.explodeOne((float)random(40, 150));
+  }
 }
 
 void doMotion() {
   // read raw accel/gyro measurements from device
   static uint32_t lastMotionMs = 0;
-  static uint32_t thresholdMs = 150;
-  static const int16_t thresholdG = 600;
   int16_t apower = motionSensor.getAPower();
+
+  accelMeter.update(apower);
 
   if (abs(apower-1024) > thresholdG) {
     led.on();
