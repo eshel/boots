@@ -180,15 +180,15 @@ public:
 #ifdef NEO_RGB
     if((mType & NEO_COLMASK) == NEO_GRB) {
 #endif
-      *p++ = g;
-      *p++ = r;
+      *p++ = g >> 1;
+      *p++ = r >> 1;
 #ifdef NEO_RGB
     } else {
-      *p++ = r;
-      *p++ = g;
+      *p++ = r >> 1;
+      *p++ = g >> 1;
     }
 #endif
-    *p = b;
+    *p = b >> 1;
   }
 
 // Set pixel color from 'packed' 32-bit RGB color:
@@ -201,15 +201,15 @@ public:
 #ifdef NEO_RGB
     if((mType & NEO_COLMASK) == NEO_GRB) {
 #endif
-      *p++ = g;
-      *p++ = r;
+      *p++ = g >> 1;
+      *p++ = r >> 1;
 #ifdef NEO_RGB
     } else {
-      *p++ = r;
-      *p++ = g;
+      *p++ = r >> 1;
+      *p++ = g >> 1;
     }
 #endif
-    *p = b;
+    *p = b >> 1;
   }
 
   inline void addPixelColor(uint8_t x, uint8_t y, uint8_t r, uint8_t g, uint8_t b) {
@@ -222,15 +222,15 @@ public:
 #ifdef NEO_RGB
     if((mType & NEO_COLMASK) == NEO_GRB) {
 #endif
-      *p++ += g;
-      *p++ += r;
+      *p++ += g >> 1;
+      *p++ += r >> 1;
 #ifdef NEO_RGB
     } else {
-      *p++ += r;
-      *p++ += g;
+      *p++ += r >> 1;
+      *p++ += g >> 1;
     }
 #endif
-    *p += b;
+    *p += b >> 1;
   }
 
   
