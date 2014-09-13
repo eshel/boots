@@ -41,7 +41,7 @@ MultiNeoPixel strip = MultiNeoPixel(7, 16, NEO_GRB + NEO_KHZ800);
 
 
 static const uint32_t thresholdMs = 150;
-static const int16_t thresholdG = 800;
+static const int16_t thresholdG = 1200;
 Motion motionSensor;
 
 
