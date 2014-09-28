@@ -195,11 +195,11 @@ void onStep() {
 void doMotion() {
   // read raw accel/gyro measurements from device
   static uint32_t lastMotionMs = 0;
-  int16_t apower = motionSensor.getAPower();
+  int16_t apower = motionSensor.getSample().apower;
 
   if (abs(apower-1024) > thresholdG) {
     led.on();
-    uint32_t ms = millis();
+    uint32_t ms = motionSensor.getSample().t;
     if (ms - lastMotionMs > thresholdMs) {
       onStep();
       lastMotionMs = ms;

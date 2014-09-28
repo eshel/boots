@@ -21,7 +21,7 @@ public:
 		mSamplesCollected = 0;
 	}
 
-	void print() {
+	void print() const {
 		Serial.print("samples=");
 		Serial.print(mSamplesCollected);
 		Serial.print(", head=");
@@ -76,34 +76,6 @@ public:
 
 	bool test() {
 		return mSensor.testConnection() ? true : false;
-	}
-
-	inline int16_t getAPower() const {
-		return getSample().apower;;
-	}
-
-	inline int16_t getAX() const {
-		return getSample().ax;
-	}
-
-	inline int16_t getAY() const {
-		return getSample().ay;
-	}
-
-	inline int16_t getAZ() const {
-		return getSample().az;
-	}
-
-	inline int16_t getGX() const {
-		return getSample().gx;
-	}
-
-	inline int16_t getGY() const {
-		return getSample().gy;
-	}
-
-	inline int16_t getGZ() const {
-		return getSample().gz;
 	}
 
 private:
