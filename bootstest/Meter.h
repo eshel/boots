@@ -11,7 +11,7 @@ public:
 		mCurrentPower = 0;
 		mCurrentX = 0;
 		setIsLog(true);
-		setPowerRange(1200, 5000);
+		setPowerRange(800, 5000);
 	}
 
 	void setIsLog(bool isLog) {
@@ -39,13 +39,17 @@ public:
 	}
 
 	virtual void update() {
-		int16_t value = mMotion.getSample().apower;
+		int32_t v0 = mMotion.getSample(0).apower;
+		int32_t v1 = mMotion.getSample(1).apower;
+		int32_t v2 = mMotion.getSample(2).apower;
+
+		int16_t value = (int16_t)((v0 * 4 + v1 * 2 + v2)) / 7;
 		value = filter(value);
 		mCurrentPower = value;
 	}
 
 	uint32_t getColor(uint8_t yVal, uint8_t stripsNum) {
-		uint16_t part = (yVal * 768) / mStrip.getSizeY();
+		uint16_t part = ((uint16_t)yVal * 768) / mStrip.getSizeY();
 		return Wheel(part);
 	}
 
@@ -73,8 +77,8 @@ public:
 	}
 
 protected:
-	virtual bool shouldDrawX(uint8_t x) {
-		if ((x == 0) || (x == 3) || (x == 5)) {
+	bool shouldDrawX(uint8_t x) {
+		if (x == mCurrentX) {
 			return true;
 		} else {
 			return false;
