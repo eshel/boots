@@ -8,8 +8,8 @@ class Meter : public Animation {
 public:
 	Meter(MultiNeoPixel& strip, bool active) : Animation(strip, active) {
 		mLastPower = mCurrentPower = 0;
-		setIsLog(false);
-		setPowerRange(800, 1600);
+		setIsLog(true);
+		setPowerRange(1200, 5000);
 	}
 
 	void setIsLog(bool isLog) {
@@ -49,12 +49,17 @@ public:
 
 	uint16_t calcLevel(uint16_t currentPower) {
 		int16_t lvl;
-		int16_t powerStep = (mMaxPower - mMinPower) / mStrip.getSizeY();
-
 		if (mIsLog) {
-			lvl = 0;
+			float minLog = logf((float)mMinPower);
+			float maxLog = logf((float)mMaxPower);
+			float powerStep = ((maxLog - minLog) / (float)mStrip.getSizeY());
+			float currentLog = logf((float)currentPower); 
+			float relativeLog = currentLog - minLog;
+			lvl = (int16_t)(relativeLog / powerStep);
 		} else {
-			lvl = (mCurrentPower - mMinPower) / powerStep;
+			int16_t relativePower = mCurrentPower - mMinPower;			
+			int16_t powerStep = (mMaxPower - mMinPower) / mStrip.getSizeY();
+			lvl = relativePower / powerStep;
 		}
 		if (lvl > mStrip.getSizeY() - 1) {
 			lvl = mStrip.getSizeY() - 1;
