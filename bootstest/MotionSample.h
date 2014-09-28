@@ -35,13 +35,14 @@ public:
 	}
 
 	void set(int16_t _ax, int16_t _ay, int16_t _az, int16_t _gx, int16_t _gy, int16_t _gz) {
+		t = millis();
+
 		ax = _ax;
 		ay = _ay;
 		az = _az;
 		gx = _gx;
 		gy = _gy;
 		gz = _gz;
-		t = millis();
 
 		float fx = (float)_ax;
 		float fy = (float)_ay;

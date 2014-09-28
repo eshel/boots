@@ -9,6 +9,7 @@ class Meter : public Animation {
 public:
 	Meter(MultiNeoPixel& strip, Motion& motion, bool active) : Animation(strip, active), mMotion(motion) {
 		mCurrentPower = 0;
+		mCurrentX = 0;
 		setIsLog(true);
 		setPowerRange(1200, 5000);
 	}
@@ -23,7 +24,7 @@ public:
 	}
 
 	virtual void begin() {
-
+		mCurrentX = mStrip.getSizeX() - 1;
 	}
 
 	virtual void clear() {
@@ -53,8 +54,8 @@ public:
 		if (mIsLog) {
 			float minLog = logf((float)mMinPower);
 			float maxLog = logf((float)mMaxPower);
-			float powerStep = ((maxLog - minLog) / (float)mStrip.getSizeY());
 			float currentLog = logf((float)currentPower); 
+			float powerStep = ((maxLog - minLog) / (float)mStrip.getSizeY());
 			float relativeLog = currentLog - minLog;
 			lvl = (int16_t)(relativeLog / powerStep);
 		} else {
@@ -72,18 +73,29 @@ public:
 	}
 
 protected:
+	virtual bool shouldDrawX(uint8_t x) {
+		if ((x == 0) || (x == 3) || (x == 5)) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
 	virtual void performDraw() {
 		update();
-
 		uint16_t xsize = mStrip.getSizeX();
-		uint16_t powerStep = ((mMaxPower - mMinPower) / mStrip.getSizeY());
+		mCurrentX++;
+		if (mCurrentX == xsize) {
+			mCurrentX = 0;
+		}
 
+		uint16_t powerStep = ((mMaxPower - mMinPower) / mStrip.getSizeY());
 		int8_t ysize = calcLevel(mCurrentPower);
 
 		for (uint8_t x = 0; x < xsize; x++) {
-			if ((x == 0) || (x == 4)) {
+			if (shouldDrawX(x)) {
 				for (uint8_t y = 0; y < ysize; y++) {
-					mStrip.setPixelColor(x, y, getColor(y, ysize));			
+					mStrip.setPixelColor(x, y, getColor((ysize - 1) - y, ysize));			
 				}
 			}
 		}
@@ -97,6 +109,7 @@ private:
 	float mLogMinPower;
 	float mLogMaxPower;
 	bool mIsLog;
+	uint16_t mCurrentX;
 };
 
 #endif // #ifndef _METER_H_
