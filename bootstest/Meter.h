@@ -3,11 +3,12 @@
 
 #include "Animation.h"
 #include "ColorUtils.h"
+#include "Motion.h"
 
 class Meter : public Animation {
 public:
-	Meter(MultiNeoPixel& strip, bool active) : Animation(strip, active) {
-		mLastPower = mCurrentPower = 0;
+	Meter(MultiNeoPixel& strip, Motion& motion, bool active) : Animation(strip, active), mMotion(motion) {
+		mCurrentPower = 0;
 		setIsLog(true);
 		setPowerRange(1200, 5000);
 	}
@@ -36,9 +37,9 @@ public:
 		return value;
 	}
 
-	virtual void update(int16_t value) {
-		filter(value);
-		mLastPower = mCurrentPower;
+	virtual void update() {
+		int16_t value = mMotion.getSample().apower;
+		value = filter(value);
 		mCurrentPower = value;
 	}
 
@@ -72,6 +73,8 @@ public:
 
 protected:
 	virtual void performDraw() {
+		update();
+
 		uint16_t xsize = mStrip.getSizeX();
 		uint16_t powerStep = ((mMaxPower - mMinPower) / mStrip.getSizeY());
 
@@ -87,7 +90,7 @@ protected:
 	}	
 
 private:
-	int16_t mLastPower;
+	Motion& mMotion;
 	int16_t mCurrentPower;
 	uint16_t mMinPower;
 	uint16_t mMaxPower;

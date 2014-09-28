@@ -54,10 +54,10 @@ Walker walker2(strip, false);
 Walker walker3(strip, false);
 Walker greenWalker(strip, false);
 Rain rain(strip, true);
-Sines sines(strip, false);
+Sines sines(strip, motionSensor, false);
 ParticleSystem particles(strip, false);
 MultiBoom boom(strip, true);
-Meter accelMeter(strip, true);
+Meter accelMeter(strip, motionSensor, true);
 
 Animation* s_Animations[] = {
   &sines,
@@ -196,9 +196,6 @@ void doMotion() {
   // read raw accel/gyro measurements from device
   static uint32_t lastMotionMs = 0;
   int16_t apower = motionSensor.getAPower();
-
-  accelMeter.update(apower); 
-  sines.update(apower);
 
   if (abs(apower-1024) > thresholdG) {
     led.on();
