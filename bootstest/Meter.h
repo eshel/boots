@@ -11,7 +11,7 @@ public:
 		mCurrentPower = 0;
 		mCurrentX = 0;
 		setIsLog(true);
-		setPowerRange(800, 5000);
+		setPowerRange(1200, 5000);
 	}
 
 	void setIsLog(bool isLog) {
@@ -48,7 +48,7 @@ public:
 		mCurrentPower = value;
 	}
 
-	uint32_t getColor(uint8_t yVal, uint8_t stripsNum) {
+	uint32_t getColor(uint8_t yVal) {
 		uint16_t part = ((uint16_t)yVal * 768) / mStrip.getSizeY();
 		return Wheel(part);
 	}
@@ -56,9 +56,9 @@ public:
 	uint16_t calcLevel(uint16_t currentPower) {
 		int16_t lvl;
 		if (mIsLog) {
-			float minLog = logf((float)mMinPower);
-			float maxLog = logf((float)mMaxPower);
-			float currentLog = logf((float)currentPower); 
+			float minLog = log((float)mMinPower);
+			float maxLog = log((float)mMaxPower);
+			float currentLog = log((float)currentPower); 
 			float powerStep = ((maxLog - minLog) / (float)mStrip.getSizeY());
 			float relativeLog = currentLog - minLog;
 			lvl = (int16_t)(relativeLog / powerStep);
@@ -99,7 +99,7 @@ protected:
 		for (uint8_t x = 0; x < xsize; x++) {
 			if (shouldDrawX(x)) {
 				for (uint8_t y = 0; y < ysize; y++) {
-					mStrip.setPixelColor(x, y, getColor((ysize - 1) - y, ysize));			
+					mStrip.setPixelColor(x, (ysize-1)-y, getColor(y));			
 				}
 			}
 		}

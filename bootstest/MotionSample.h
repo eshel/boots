@@ -49,7 +49,7 @@ public:
 		float fz = (float)_az;
 
 		apower = (int16_t)sqrt(fx*fx + fy*fy + fz*fz);
-		alog = logf(apower);
+		alog = log(apower);
 	}
 
 	// Sets this sample's values to be s2 - s1
