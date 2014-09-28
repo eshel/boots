@@ -9,19 +9,19 @@
 #define MAX_PARTICLES 5
 #define NUM_COLUMNS 7
 #define NUM_ROWS 16
-#define SPAWN_TIME 311
+#define SPAWN_TIME 151
 
 // units are 256ths of pixels per 1000/1024 milliseconds 
-#define PARTICLE_SPEED (16*256)
+#define PARTICLE_SPEED (32*256)
 
 class ParticleSystem : public Animation {
 public:
   ParticleSystem(MultiNeoPixel& ledStrip, bool active) : Animation(ledStrip, active)
-  {
-  }
+  {}
   
 protected:  
-    virtual void performDraw() {
+  virtual void performDraw() {
+    mStrip.clearAll(); //return; // TODO: !!!
     unsigned long current_time = getTime() >> 10;
     if (current_time - last_spawn_time > SPAWN_TIME) {
       spawnParticle(current_time, nextSpawnColumn);
@@ -32,7 +32,7 @@ protected:
       runColumn(col, time_delta);
     }
     last_update_time = current_time;
-    }
+  }
 
     virtual void begin() {
       nextSpawnColumn = 0;
@@ -60,11 +60,10 @@ protected:
         //Serial.print("delta: "); Serial.println(pos_delta);
         
         //Serial.print(i); Serial.print(") pos = "); Serial.print(particle.pos); Serial.print(" r = "); Serial.print(particle.r);
-        // draw pulse
-        drawParticle(particle, i);
-        
-        //Serial.print(" pix=");
         //Serial.println();
+        // draw pulse
+        drawParticle(particle, col);
+        
         // move pulse - speed at 16 pixels per 257/1000th of a second
         particle.pos += pos_delta;
         if (particle.pos  >= (256*16 + 2*particle.radius)) {
@@ -107,7 +106,9 @@ protected:
     }
 
     Particle &nextParticle() {
-      return particles[nextSpawnIndex];
+      Particle &part = particles[nextSpawnIndex];
+      nextSpawnIndex = (nextSpawnIndex + 1) % MAX_PARTICLES;
+      return part;
     }
 
     uint8_t nextSpawnIndex;
@@ -123,7 +124,7 @@ protected:
       // multiplication
       int closeness = max(particle.radius - abs(particle.pos - x), 0) >> 4;
       //Serial.print(x); Serial.print(", ");
-      mStrip.addPixelColor(col, (NUM_ROWS - 1) - (x >> 8), (particle.r * closeness) / (particle.radius >> 4), (particle.g * closeness)  / (particle.radius >> 4), (particle.b * closeness) / (particle.radius >> 4));
+      mStrip.setPixelColor(col, (NUM_ROWS - 1) - (x >> 8), (particle.r * closeness) / (particle.radius >> 4), (particle.g * closeness)  / (particle.radius >> 4), (particle.b * closeness) / (particle.radius >> 4));
       //strip.setPixelColor(x >> 8, 124,221,0);
     }
   }
@@ -133,7 +134,7 @@ protected:
     Column::Particle &particle = columns[col].nextParticle();
     last_spawn_time = current_time;
     particle.alive = true;
-    particle.radius = 31*16;
+    particle.radius = 107*16;
     particle.pos = -particle.radius;
     particle.color = Wheel((current_time >> 5) % 768);
   }
