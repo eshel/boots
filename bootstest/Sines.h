@@ -39,7 +39,8 @@ protected:
 public:
 	void sinRainbow() {
 		uint32_t currentTime = getTime();
-		int32_t t = currentTime >> 11;
+		int32_t t = (currentTime >> 11) + mValue*5;
+		//Serial.print(currentTime >> 11); Serial.print(" "); Serial.println(mValue);
 		for(int32_t x=0; x < mStrip.getSizeX(); x++) {
 			for(int32_t y=0; y < mStrip.getSizeY(); y++) {
 				int val = (sine((x*571 + t)/23) + sine((y*353 + t)/27) - 255);
@@ -54,10 +55,15 @@ public:
 		}
 	}
 	virtual void begin() {
+		mValue = 0;
 	}
 
 	virtual void clear() {
 		mIsActive = 0;
+	}
+
+	virtual void update(int16_t value) {
+		mValue = (mValue + value) >> 2;
 	}
 
 	inline byte sine(byte offset) {
@@ -65,6 +71,7 @@ public:
 	}
 
 private:
+	int32_t mValue;
 };
 
 

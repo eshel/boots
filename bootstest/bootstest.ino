@@ -153,7 +153,7 @@ void setup() {
   setModeA(0);
   setModeB(0);
 
-  Serial.begin(38400);
+//  Serial.begin(38400);
   Wire.begin();
   led.begin();
 
@@ -197,7 +197,8 @@ void doMotion() {
   static uint32_t lastMotionMs = 0;
   int16_t apower = motionSensor.getAPower();
 
-  accelMeter.update(apower);
+  accelMeter.update(apower); 
+  sines.update(apower);
 
   if (abs(apower-1024) > thresholdG) {
     led.on();
