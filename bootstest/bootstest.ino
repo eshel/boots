@@ -49,9 +49,9 @@ Button buttonA(PIN_BUTTON_A);
 Button buttonB(PIN_BUTTON_B);
 
 Disco disco(strip, false);
-Walker walker1(strip, false);
+/*Walker walker1(strip, false);
 Walker walker2(strip, false);
-Walker walker3(strip, false);
+Walker walker3(strip, false);*/
 Walker greenWalker(strip, false);
 Rain rain(strip, true);
 Sines sines(strip, motionSensor, false);
@@ -59,14 +59,15 @@ ParticleSystem particles(strip, false);
 MultiBoom boom(strip, true);
 Meter accelMeter(strip, motionSensor, true);
 
+
 Animation* s_Animations[] = {
   &sines,
   &disco,
   &rain,  
   &boom,
-  &walker1,
+/*  &walker1,
   &walker2,
-  &walker3,
+  &walker3,*/
   &greenWalker,
   &particles,
   &accelMeter
@@ -180,7 +181,7 @@ void setup() {
   strip.begin();
   strip.show(); // Initialize all pixels to 'off'
 
-  delay(3000);
+  delay(5000);
   
   last_update = millis();
 }
